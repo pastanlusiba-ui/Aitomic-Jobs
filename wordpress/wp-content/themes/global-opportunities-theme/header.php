@@ -31,7 +31,6 @@
                 <a href="<?php echo esc_url(home_url('/opportunity-type/remote-work/')); ?>">Remote Work</a>
                 <a href="<?php echo esc_url(home_url('/opportunity-type/training-short-course/')); ?>">Training</a>
                 <a href="<?php echo esc_url(home_url('/opportunity-type/call-for-applications/')); ?>">Calls</a>
-                <a href="<?php echo esc_url(home_url('/opportunity-category/research/')); ?>">Research</a>
             </nav>
         </div>
     </div>
