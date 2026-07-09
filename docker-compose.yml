@@ -1,0 +1,33 @@
+services:
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: aitomic_jobs
+      MYSQL_USER: aitomic
+      MYSQL_PASSWORD: aitomic
+      MYSQL_ROOT_PASSWORD: aitomic_root
+    volumes:
+      - db_data:/var/lib/mysql
+
+  wordpress:
+    image: wordpress:6.6-php8.2-apache
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "8088:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: aitomic_jobs
+      WORDPRESS_DB_USER: aitomic
+      WORDPRESS_DB_PASSWORD: aitomic
+      WORDPRESS_DEBUG: "1"
+    volumes:
+      - wp_data:/var/www/html
+      - ./wordpress/wp-content/plugins/global-opportunities:/var/www/html/wp-content/plugins/global-opportunities
+      - ./wordpress/wp-content/themes/global-opportunities-theme:/var/www/html/wp-content/themes/global-opportunities-theme
+
+volumes:
+  db_data:
+  wp_data:
