@@ -41,7 +41,6 @@ function go_opportunity_categories(): array
         'legal-policy' => 'Legal & Policy',
         'monitoring-evaluation' => 'Monitoring & Evaluation',
         'operations-logistics' => 'Operations & Logistics',
-        'research' => 'Research',
     ];
 }
 
