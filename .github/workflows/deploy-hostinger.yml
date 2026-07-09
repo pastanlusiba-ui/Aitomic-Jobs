@@ -9,6 +9,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      HOSTINGER_SSH_HOST: 92.113.28.250
+      HOSTINGER_SSH_USER: u710255073
+      HOSTINGER_SSH_PORT: 65002
+      HOSTINGER_WP_PATH: /home/u710255073/domains/aitomic.net/public_html
 
     steps:
       - name: Checkout repository
@@ -19,26 +24,6 @@ jobs:
         env:
           HOSTINGER_SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
 
-      - name: Check HOSTINGER_SSH_HOST secret
-        run: test -n "$HOSTINGER_SSH_HOST"
-        env:
-          HOSTINGER_SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
-
-      - name: Check HOSTINGER_SSH_USER secret
-        run: test -n "$HOSTINGER_SSH_USER"
-        env:
-          HOSTINGER_SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
-
-      - name: Check HOSTINGER_SSH_PORT secret
-        run: test -n "$HOSTINGER_SSH_PORT"
-        env:
-          HOSTINGER_SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
-
-      - name: Check HOSTINGER_WP_PATH secret
-        run: test -n "$HOSTINGER_WP_PATH"
-        env:
-          HOSTINGER_WP_PATH: ${{ secrets.HOSTINGER_WP_PATH }}
-
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
@@ -47,25 +32,26 @@ jobs:
           ssh-keyscan -p "$HOSTINGER_SSH_PORT" "$HOSTINGER_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
         env:
           HOSTINGER_SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
-          HOSTINGER_SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
-          HOSTINGER_SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+
+      - name: Validate private key format
+        run: ssh-keygen -y -f ~/.ssh/hostinger_key > /dev/null
 
       - name: Test Hostinger connection
         run: |
-          ssh -i ~/.ssh/hostinger_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "${{ secrets.HOSTINGER_SSH_PORT }}" \
-            "${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }}" \
-            "test -d '${{ secrets.HOSTINGER_WP_PATH }}' && echo 'Hostinger WordPress path found'"
+          ssh -i ~/.ssh/hostinger_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$HOSTINGER_SSH_PORT" \
+            "$HOSTINGER_SSH_USER@$HOSTINGER_SSH_HOST" \
+            "test -d '$HOSTINGER_WP_PATH' && echo 'Hostinger WordPress path found'"
 
       - name: Deploy Global Opportunities plugin
         run: |
           rsync -az --delete \
-            -e "ssh -i ~/.ssh/hostinger_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p ${{ secrets.HOSTINGER_SSH_PORT }}" \
+            -e "ssh -i ~/.ssh/hostinger_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $HOSTINGER_SSH_PORT" \
             wordpress/wp-content/plugins/global-opportunities/ \
-            "${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }}:${{ secrets.HOSTINGER_WP_PATH }}/wp-content/plugins/global-opportunities/"
+            "$HOSTINGER_SSH_USER@$HOSTINGER_SSH_HOST:$HOSTINGER_WP_PATH/wp-content/plugins/global-opportunities/"
 
       - name: Deploy Global Opportunities theme
         run: |
           rsync -az --delete \
-            -e "ssh -i ~/.ssh/hostinger_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p ${{ secrets.HOSTINGER_SSH_PORT }}" \
+            -e "ssh -i ~/.ssh/hostinger_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $HOSTINGER_SSH_PORT" \
             wordpress/wp-content/themes/global-opportunities-theme/ \
-            "${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }}:${{ secrets.HOSTINGER_WP_PATH }}/wp-content/themes/global-opportunities-theme/"
+            "$HOSTINGER_SSH_USER@$HOSTINGER_SSH_HOST:$HOSTINGER_WP_PATH/wp-content/themes/global-opportunities-theme/"
