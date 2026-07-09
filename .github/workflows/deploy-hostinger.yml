@@ -14,24 +14,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/hostinger_key
+          chmod 600 ~/.ssh/hostinger_key
+          ssh-keyscan -p "${{ secrets.HOSTINGER_SSH_PORT }}" "${{ secrets.HOSTINGER_SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Test Hostinger connection
+        run: |
+          ssh -i ~/.ssh/hostinger_key -p "${{ secrets.HOSTINGER_SSH_PORT }}" \
+            "${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }}" \
+            "test -d '${{ secrets.HOSTINGER_WP_PATH }}' && echo 'Hostinger WordPress path found'"
+
       - name: Deploy Global Opportunities plugin
-        uses: easingthemes/ssh-deploy@v5.1.0
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
-          REMOTE_USER: ${{ secrets.HOSTINGER_SSH_USER }}
-          REMOTE_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
-          SOURCE: wordpress/wp-content/plugins/global-opportunities/
-          TARGET: ${{ secrets.HOSTINGER_WP_PATH }}/wp-content/plugins/global-opportunities/
-          ARGS: -azvc --delete
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/hostinger_key -p ${{ secrets.HOSTINGER_SSH_PORT }}" \
+            wordpress/wp-content/plugins/global-opportunities/ \
+            "${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }}:${{ secrets.HOSTINGER_WP_PATH }}/wp-content/plugins/global-opportunities/"
 
       - name: Deploy Global Opportunities theme
-        uses: easingthemes/ssh-deploy@v5.1.0
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
-          REMOTE_USER: ${{ secrets.HOSTINGER_SSH_USER }}
-          REMOTE_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
-          SOURCE: wordpress/wp-content/themes/global-opportunities-theme/
-          TARGET: ${{ secrets.HOSTINGER_WP_PATH }}/wp-content/themes/global-opportunities-theme/
-          ARGS: -azvc --delete
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/hostinger_key -p ${{ secrets.HOSTINGER_SSH_PORT }}" \
+            wordpress/wp-content/themes/global-opportunities-theme/ \
+            "${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }}:${{ secrets.HOSTINGER_WP_PATH }}/wp-content/themes/global-opportunities-theme/"
