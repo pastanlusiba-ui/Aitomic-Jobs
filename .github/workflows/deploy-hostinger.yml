@@ -14,17 +14,41 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check HOSTINGER_SSH_KEY secret
+        run: test -n "$HOSTINGER_SSH_KEY"
+        env:
+          HOSTINGER_SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+
+      - name: Check HOSTINGER_SSH_HOST secret
+        run: test -n "$HOSTINGER_SSH_HOST"
+        env:
+          HOSTINGER_SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+
+      - name: Check HOSTINGER_SSH_USER secret
+        run: test -n "$HOSTINGER_SSH_USER"
+        env:
+          HOSTINGER_SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+
+      - name: Check HOSTINGER_SSH_PORT secret
+        run: test -n "$HOSTINGER_SSH_PORT"
+        env:
+          HOSTINGER_SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+
+      - name: Check HOSTINGER_WP_PATH secret
+        run: test -n "$HOSTINGER_WP_PATH"
+        env:
+          HOSTINGER_WP_PATH: ${{ secrets.HOSTINGER_WP_PATH }}
+
       - name: Configure SSH
         run: |
-          test -n "${{ secrets.HOSTINGER_SSH_KEY }}" || { echo "::error::HOSTINGER_SSH_KEY is empty"; exit 1; }
-          test -n "${{ secrets.HOSTINGER_SSH_HOST }}" || { echo "::error::HOSTINGER_SSH_HOST is empty"; exit 1; }
-          test -n "${{ secrets.HOSTINGER_SSH_USER }}" || { echo "::error::HOSTINGER_SSH_USER is empty"; exit 1; }
-          test -n "${{ secrets.HOSTINGER_SSH_PORT }}" || { echo "::error::HOSTINGER_SSH_PORT is empty"; exit 1; }
-          test -n "${{ secrets.HOSTINGER_WP_PATH }}" || { echo "::error::HOSTINGER_WP_PATH is empty"; exit 1; }
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/hostinger_key
+          printf '%s\n' "$HOSTINGER_SSH_KEY" > ~/.ssh/hostinger_key
           chmod 600 ~/.ssh/hostinger_key
-          ssh-keyscan -p "${{ secrets.HOSTINGER_SSH_PORT }}" "${{ secrets.HOSTINGER_SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh-keyscan -p "$HOSTINGER_SSH_PORT" "$HOSTINGER_SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+        env:
+          HOSTINGER_SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          HOSTINGER_SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          HOSTINGER_SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
 
       - name: Test Hostinger connection
         run: |
