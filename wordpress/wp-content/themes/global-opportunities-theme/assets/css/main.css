@@ -99,35 +99,56 @@ a { color: var(--blue); }
     background: var(--paper);
 }
 
-.global-search-shell {
+.opportunity-type-ribbon {
     background: var(--blue-dark);
     border-top: 1px solid rgba(255, 255, 255, 0.12);
-    padding: 12px 0;
+    padding: 13px 0;
 }
 
-.global-search-shell .opportunity-search {
-    grid-template-columns: minmax(180px, 1.4fr) repeat(4, minmax(140px, 1fr)) auto;
-    align-items: end;
+.ribbon-inner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
 }
 
-.global-search-shell .opportunity-search label:first-of-type,
-.global-search-shell .opportunity-search button {
-    grid-column: auto;
-}
-
-.global-search-shell .opportunity-search label {
-    color: #e1e7ff;
-}
-
-.global-search-shell .opportunity-search input,
-.global-search-shell .opportunity-search select {
-    min-height: 42px;
-    border-radius: 10px;
-}
-
-.global-search-shell .opportunity-search button {
-    min-height: 42px;
+.ribbon-label {
+    color: #dbe2ff;
+    font-size: 13px;
+    font-weight: 900;
+    text-transform: uppercase;
     white-space: nowrap;
+}
+
+.ribbon-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 2px 0;
+}
+
+.ribbon-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 8px 13px;
+    background: var(--coral);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.1;
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
+}
+
+.ribbon-links a:hover,
+.ribbon-links a:focus {
+    background: var(--coral-dark);
+    color: #fff;
 }
 
 .hero {
@@ -444,11 +465,10 @@ h3 { font-size: 22px; }
         align-items: flex-start;
     }
 
-    .opportunity-search,
-    .global-search-shell .opportunity-search { grid-template-columns: 1fr; }
+    .opportunity-search { grid-template-columns: 1fr; }
 
-    .global-search-shell .opportunity-search label:first-of-type,
-    .global-search-shell .opportunity-search button { grid-column: 1 / -1; }
+    .ribbon-inner { align-items: flex-start; }
+    .ribbon-links { flex-wrap: wrap; overflow-x: visible; }
     h1 { font-size: 40px; }
     .site-nav ul,
     .quick-links { flex-wrap: wrap; }
