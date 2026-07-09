@@ -23,7 +23,7 @@ jobs:
           REMOTE_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
           SOURCE: wordpress/wp-content/plugins/global-opportunities/
           TARGET: ${{ secrets.HOSTINGER_WP_PATH }}/wp-content/plugins/global-opportunities/
-          ARGS: -rlgoDzvc --delete
+          ARGS: -azvc --delete
 
       - name: Deploy Global Opportunities theme
         uses: easingthemes/ssh-deploy@v5.1.0
@@ -34,4 +34,4 @@ jobs:
           REMOTE_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
           SOURCE: wordpress/wp-content/themes/global-opportunities-theme/
           TARGET: ${{ secrets.HOSTINGER_WP_PATH }}/wp-content/themes/global-opportunities-theme/
-          ARGS: -rlgoDzvc --delete
+          ARGS: -azvc --delete
