@@ -16,27 +16,32 @@ jobs:
 
       - name: Configure SSH
         run: |
+          test -n "${{ secrets.HOSTINGER_SSH_KEY }}" || { echo "::error::HOSTINGER_SSH_KEY is empty"; exit 1; }
+          test -n "${{ secrets.HOSTINGER_SSH_HOST }}" || { echo "::error::HOSTINGER_SSH_HOST is empty"; exit 1; }
+          test -n "${{ secrets.HOSTINGER_SSH_USER }}" || { echo "::error::HOSTINGER_SSH_USER is empty"; exit 1; }
+          test -n "${{ secrets.HOSTINGER_SSH_PORT }}" || { echo "::error::HOSTINGER_SSH_PORT is empty"; exit 1; }
+          test -n "${{ secrets.HOSTINGER_WP_PATH }}" || { echo "::error::HOSTINGER_WP_PATH is empty"; exit 1; }
           mkdir -p ~/.ssh
           printf '%s\n' "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/hostinger_key
           chmod 600 ~/.ssh/hostinger_key
-          ssh-keyscan -p "${{ secrets.HOSTINGER_SSH_PORT }}" "${{ secrets.HOSTINGER_SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${{ secrets.HOSTINGER_SSH_PORT }}" "${{ secrets.HOSTINGER_SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Test Hostinger connection
         run: |
-          ssh -i ~/.ssh/hostinger_key -p "${{ secrets.HOSTINGER_SSH_PORT }}" \
+          ssh -i ~/.ssh/hostinger_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "${{ secrets.HOSTINGER_SSH_PORT }}" \
             "${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }}" \
             "test -d '${{ secrets.HOSTINGER_WP_PATH }}' && echo 'Hostinger WordPress path found'"
 
       - name: Deploy Global Opportunities plugin
         run: |
           rsync -az --delete \
-            -e "ssh -i ~/.ssh/hostinger_key -p ${{ secrets.HOSTINGER_SSH_PORT }}" \
+            -e "ssh -i ~/.ssh/hostinger_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p ${{ secrets.HOSTINGER_SSH_PORT }}" \
             wordpress/wp-content/plugins/global-opportunities/ \
             "${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }}:${{ secrets.HOSTINGER_WP_PATH }}/wp-content/plugins/global-opportunities/"
 
       - name: Deploy Global Opportunities theme
         run: |
           rsync -az --delete \
-            -e "ssh -i ~/.ssh/hostinger_key -p ${{ secrets.HOSTINGER_SSH_PORT }}" \
+            -e "ssh -i ~/.ssh/hostinger_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p ${{ secrets.HOSTINGER_SSH_PORT }}" \
             wordpress/wp-content/themes/global-opportunities-theme/ \
             "${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }}:${{ secrets.HOSTINGER_WP_PATH }}/wp-content/themes/global-opportunities-theme/"
