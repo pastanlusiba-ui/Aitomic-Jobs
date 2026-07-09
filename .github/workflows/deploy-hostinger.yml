@@ -1,0 +1,37 @@
+name: Deploy WordPress Theme and Plugin to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy Global Opportunities plugin
+        uses: easingthemes/ssh-deploy@v5.1.0
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          REMOTE_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          REMOTE_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SOURCE: wordpress/wp-content/plugins/global-opportunities/
+          TARGET: ${{ secrets.HOSTINGER_WP_PATH }}/wp-content/plugins/global-opportunities/
+          ARGS: -rlgoDzvc --delete
+
+      - name: Deploy Global Opportunities theme
+        uses: easingthemes/ssh-deploy@v5.1.0
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          REMOTE_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          REMOTE_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SOURCE: wordpress/wp-content/themes/global-opportunities-theme/
+          TARGET: ${{ secrets.HOSTINGER_WP_PATH }}/wp-content/themes/global-opportunities-theme/
+          ARGS: -rlgoDzvc --delete

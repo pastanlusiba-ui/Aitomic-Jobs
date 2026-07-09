@@ -90,3 +90,7 @@ The database includes global job boards, remote job boards, UN and international
 ## WordPress Connection
 
 See `wordpress-setup.md` for local Docker setup and hosted WordPress installation instructions. The plugin includes an admin importer at Opportunities > Opportunity Guide for creating sample opportunities as real WordPress posts.
+
+## Hostinger Deployment
+
+See `HOSTINGER_DEPLOYMENT.md` for the GitHub Actions deployment workflow that sends only the WordPress plugin and theme to Hostinger.
