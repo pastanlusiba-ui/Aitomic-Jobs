@@ -16,6 +16,7 @@
             <ul>
                 <li><a href="<?php echo esc_url(home_url('/')); ?>">Home</a></li>
                 <li><a href="<?php echo esc_url(get_post_type_archive_link('opportunity') ?: home_url('/opportunities/')); ?>">Opportunities</a></li>
+                <li><a href="<?php echo esc_url(home_url('/opportunities/expired/')); ?>">Expired</a></li>
             </ul>
         </nav>
         <a class="header-cta" href="<?php echo esc_url(get_post_type_archive_link('opportunity') ?: home_url('/')); ?>">Postings</a>

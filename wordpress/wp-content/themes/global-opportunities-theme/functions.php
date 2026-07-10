@@ -20,7 +20,7 @@ function gotheme_enqueue_assets(): void
         'gotheme-main',
         get_template_directory_uri() . '/assets/css/main.css',
         [],
-        '0.1.0'
+        '0.1.1'
     );
 }
 add_action('wp_enqueue_scripts', 'gotheme_enqueue_assets');
@@ -51,6 +51,51 @@ function gotheme_opportunity_meta_list(): string
     }
 
     return go_render_opportunity_meta_list(get_the_ID());
+}
+
+function gotheme_deadline_value(?int $post_id = null): string
+{
+    $post_id = $post_id ?: get_the_ID();
+
+    if (!$post_id || !function_exists('go_get_meta')) {
+        return '';
+    }
+
+    return trim((string) go_get_meta($post_id, 'deadline'));
+}
+
+function gotheme_deadline_timestamp(string $deadline): ?int
+{
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $deadline)) {
+        return null;
+    }
+
+    $timestamp = strtotime($deadline . ' 23:59:59');
+
+    return $timestamp ?: null;
+}
+
+function gotheme_deadline_label(?int $post_id = null): string
+{
+    $deadline = gotheme_deadline_value($post_id);
+
+    if ($deadline === '') {
+        return 'Deadline: Not specified';
+    }
+
+    $timestamp = gotheme_deadline_timestamp($deadline);
+    if (!$timestamp) {
+        return 'Deadline: ' . $deadline;
+    }
+
+    return 'Deadline: ' . date_i18n(get_option('date_format'), $timestamp);
+}
+
+function gotheme_is_expired_opportunity(?int $post_id = null): bool
+{
+    $timestamp = gotheme_deadline_timestamp(gotheme_deadline_value($post_id));
+
+    return $timestamp !== null && $timestamp < current_time('timestamp');
 }
 
 function gotheme_site_icon(): void

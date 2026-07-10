@@ -547,11 +547,71 @@ function go_shortcode_opportunity_search(): string
 }
 add_shortcode('opportunity_search', 'go_shortcode_opportunity_search');
 
+function go_add_expired_opportunities_rewrite(): void
+{
+    add_rewrite_rule('^opportunities/expired/?$', 'index.php?post_type=opportunity&expired_opportunities=1', 'top');
+}
+add_action('init', 'go_add_expired_opportunities_rewrite');
+
+function go_add_expired_opportunities_query_var(array $vars): array
+{
+    $vars[] = 'expired_opportunities';
+
+    return $vars;
+}
+add_filter('query_vars', 'go_add_expired_opportunities_query_var');
+
+function go_deadline_archive_meta_query(bool $expired): array
+{
+    $today = current_time('Y-m-d');
+
+    if ($expired) {
+        return [
+            [
+                'key' => '_go_deadline',
+                'value' => '^\d{4}-\d{2}-\d{2}$',
+                'compare' => 'REGEXP',
+            ],
+            [
+                'key' => '_go_deadline',
+                'value' => $today,
+                'compare' => '<',
+                'type' => 'DATE',
+            ],
+        ];
+    }
+
+    return [
+        'relation' => 'OR',
+        [
+            'key' => '_go_deadline',
+            'compare' => 'NOT EXISTS',
+        ],
+        [
+            'key' => '_go_deadline',
+            'value' => '',
+            'compare' => '=',
+        ],
+        [
+            'key' => '_go_deadline',
+            'value' => '^\d{4}-\d{2}-\d{2}$',
+            'compare' => 'NOT REGEXP',
+        ],
+        [
+            'key' => '_go_deadline',
+            'value' => $today,
+            'compare' => '>=',
+            'type' => 'DATE',
+        ],
+    ];
+}
+
 function go_filter_opportunity_archive(WP_Query $query): void
 {
     $is_opportunity_search = $query->is_search() && $query->get('post_type') === 'opportunity';
+    $is_expired_archive = (bool) $query->get('expired_opportunities');
 
-    if (is_admin() || !$query->is_main_query() || (!$query->is_post_type_archive('opportunity') && !$is_opportunity_search)) {
+    if (is_admin() || !$query->is_main_query() || (!$query->is_post_type_archive('opportunity') && !$is_opportunity_search && !$is_expired_archive)) {
         return;
     }
 
@@ -573,7 +633,14 @@ function go_filter_opportunity_archive(WP_Query $query): void
         $query->set('tax_query', $tax_query);
     }
 
+    $query->set('meta_query', go_deadline_archive_meta_query($is_expired_archive));
     $query->set('posts_per_page', 12);
+
+    if ($is_expired_archive) {
+        $query->set('orderby', 'meta_value');
+        $query->set('meta_key', '_go_deadline');
+        $query->set('order', 'DESC');
+    }
 }
 add_action('pre_get_posts', 'go_filter_opportunity_archive');
 
