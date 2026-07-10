@@ -534,7 +534,7 @@ function go_shortcode_opportunity_search(): string
                     <option value="">All</option>
                     <?php foreach ($terms as $term) : ?>
                         <option value="<?php echo esc_attr($term->slug); ?>" <?php selected(get_query_var($taxonomy), $term->slug); ?>>
-                            <?php echo esc_html($term->name); ?>
+                            <?php echo esc_html(sprintf('%s (%d)', $term->name, (int) $term->count)); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
