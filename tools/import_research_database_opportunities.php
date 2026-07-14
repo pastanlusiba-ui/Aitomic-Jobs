@@ -75,6 +75,107 @@ function aitomic_is_generic_source_url(string $source_url): bool {
     return (bool) preg_match('/(careers\.|jobs\.|\/careers?$|\/employment$|\/procurement$)/i', $source_url);
 }
 
+function aitomic_term_slug_for_value(string $taxonomy, string $value): string {
+    $value = trim($value);
+    $normalized = strtolower(preg_replace('/\s+/', ' ', $value));
+
+    $maps = [
+        'opportunity_type' => [
+            'job' => 'job',
+            'jobs' => 'job',
+            'internship' => 'internship',
+            'internships' => 'internship',
+            'tender / consultancy' => 'tender-consultancy',
+            'tenders / consultancies' => 'tender-consultancy',
+            'consultancy' => 'tender-consultancy',
+            'consultancies' => 'tender-consultancy',
+            'tenders' => 'tender-consultancy',
+            'volunteer' => 'volunteer',
+            'volunteer opportunity' => 'volunteer',
+            'volunteer opportunities' => 'volunteer',
+            'remote' => 'remote-work',
+            'remote work' => 'remote-work',
+            'remote work opportunity' => 'remote-work',
+            'remote work opportunities' => 'remote-work',
+            'training' => 'training-short-course',
+            'training / short course' => 'training-short-course',
+            'training / short courses' => 'training-short-course',
+            'call for applications' => 'call-for-applications',
+            'calls for applications' => 'call-for-applications',
+        ],
+        'work_mode' => [
+            'on-site' => 'on-site',
+            'onsite' => 'on-site',
+            'hybrid' => 'hybrid',
+            'remote' => 'remote',
+            'field-based' => 'field-based',
+            'field based' => 'field-based',
+            'various' => 'field-based',
+            'multiple' => 'field-based',
+        ],
+        'opportunity_category' => [
+            'administration' => 'administration',
+            'agriculture' => 'agriculture',
+            'business & finance' => 'business-finance',
+            'business finance' => 'business-finance',
+            'communications' => 'communications',
+            'education' => 'education',
+            'engineering' => 'engineering',
+            'health' => 'health',
+            'humanitarian & development' => 'humanitarian-development',
+            'humanitarian development' => 'humanitarian-development',
+            'information technology' => 'information-technology',
+            'legal & policy' => 'legal-policy',
+            'legal policy' => 'legal-policy',
+            'monitoring & evaluation' => 'monitoring-evaluation',
+            'monitoring evaluation' => 'monitoring-evaluation',
+            'operations & logistics' => 'operations-logistics',
+            'operations logistics' => 'operations-logistics',
+        ],
+    ];
+
+    if (isset($maps[$taxonomy][$normalized])) {
+        return $maps[$taxonomy][$normalized];
+    }
+
+    if ($taxonomy === 'country') {
+        if (in_array($normalized, ['global/international', 'global / international', 'global', 'international', 'various', 'multiple', 'remote / various'], true)) {
+            return $normalized === 'remote' ? 'remote' : 'global-international';
+        }
+    }
+
+    return sanitize_title($value);
+}
+
+function aitomic_assign_term_value(int $post_id, string $taxonomy, string $value): void {
+    $value = trim($value);
+    if ($value === '') {
+        return;
+    }
+
+    $slug = aitomic_term_slug_for_value($taxonomy, $value);
+    $term = get_term_by('slug', $slug, $taxonomy);
+    if (!$term || is_wp_error($term)) {
+        $term = term_exists($slug, $taxonomy);
+    }
+    if (!$term) {
+        $term = wp_insert_term($value, $taxonomy, ['slug' => $slug]);
+    }
+    if (is_wp_error($term)) {
+        return;
+    }
+
+    $term_id = is_array($term) ? (int) $term['term_id'] : (int) $term->term_id;
+    wp_set_object_terms($post_id, [$term_id], $taxonomy, false);
+}
+
+function aitomic_assign_imported_terms(int $post_id, array $item): void {
+    aitomic_assign_term_value($post_id, 'opportunity_type', aitomic_import_value($item, 'opportunity_type'));
+    aitomic_assign_term_value($post_id, 'opportunity_category', aitomic_import_value($item, 'category'));
+    aitomic_assign_term_value($post_id, 'country', aitomic_import_value($item, 'country'));
+    aitomic_assign_term_value($post_id, 'work_mode', aitomic_import_value($item, 'work_mode'));
+}
+
 $created = 0;
 $skipped = 0;
 $errors = 0;
@@ -156,6 +257,7 @@ foreach ($items as $item) {
     update_post_meta($post_id, '_go_discovery_listing_page', esc_url_raw(aitomic_import_value($item, 'discovery_listing_page')));
     update_post_meta($post_id, '_go_source_group', sanitize_text_field(aitomic_import_value($item, 'source_group')));
     update_post_meta($post_id, '_go_eligibility', $summary);
+    aitomic_assign_imported_terms($post_id, $item);
     $created++;
 }
 
