@@ -147,6 +147,136 @@ function aitomic_term_slug_for_value(string $taxonomy, string $value): string {
     return sanitize_title($value);
 }
 
+function aitomic_country_slug_from_location(string $location): string {
+    $text = strtolower(trim($location));
+    if ($text === '') {
+        return '';
+    }
+
+    $city_map = [
+        'nairobi' => 'kenya',
+        'mombasa' => 'kenya',
+        'nakuru' => 'kenya',
+        'kisumu' => 'kenya',
+        'eldoret' => 'kenya',
+        'thika' => 'kenya',
+        'sagana' => 'kenya',
+        'kakamega' => 'kenya',
+        'rest of kenya' => 'kenya',
+        'outside kenya' => 'kenya',
+        'kampala' => 'uganda',
+        'entebbe' => 'uganda',
+        'jinja' => 'uganda',
+        'gulu' => 'uganda',
+        'rest of uganda' => 'uganda',
+        'outside uganda' => 'uganda',
+        'lagos' => 'nigeria',
+        'abuja' => 'nigeria',
+        'osun' => 'nigeria',
+        'abia' => 'nigeria',
+        'ebonyi' => 'nigeria',
+        'rivers' => 'nigeria',
+        'minna' => 'nigeria',
+        'bauchi' => 'nigeria',
+        'lafia' => 'nigeria',
+        'kigali' => 'rwanda',
+        'bugesera' => 'rwanda',
+        'rubengera' => 'rwanda',
+        'addis ababa' => 'ethiopia',
+        'cairo' => 'egypt',
+        'dakar' => 'senegal',
+        'abidjan' => 'cote-d-ivoire',
+        'zomba' => 'malawi',
+        'lilongwe' => 'malawi',
+        'goma' => 'democratic-republic-of-the-congo',
+        'kabwe' => 'zambia',
+        'muramvya' => 'burundi',
+        'dolow' => 'somalia',
+        'abu dhabi' => 'united-arab-emirates',
+        'kabul' => 'afghanistan',
+        'herat' => 'afghanistan',
+        'jalalabad' => 'afghanistan',
+        'kandahar' => 'afghanistan',
+        'helmand' => 'afghanistan',
+        'nimroz' => 'afghanistan',
+        'sar-e-pol' => 'afghanistan',
+        'colombo' => 'sri-lanka',
+        'ankara' => 'turkey',
+        'geneva' => 'switzerland',
+        'rome' => 'italy',
+        'vienna' => 'austria',
+        'the hague' => 'netherlands',
+        'hamburg' => 'germany',
+        'bremerhaven' => 'germany',
+        'washington' => 'united-states',
+        'new york' => 'united-states',
+        'ledyard' => 'united-states',
+        'anaheim' => 'united-states',
+        'phoenix' => 'united-states',
+        'burbank' => 'united-states',
+        'las vegas' => 'united-states',
+        'seattle' => 'united-states',
+        'the woodlands' => 'united-states',
+        'los angeles' => 'united-states',
+        'frisco' => 'united-states',
+        'jersey city' => 'united-states',
+        'blue ash' => 'united-states',
+    ];
+
+    foreach ($city_map as $needle => $slug) {
+        if (str_contains($text, $needle)) {
+            return $slug;
+        }
+    }
+
+    if (function_exists('go_countries')) {
+        foreach (go_countries() as $slug => $name) {
+            if ($slug === 'remote') {
+                continue;
+            }
+            if (preg_match('/\b' . preg_quote(strtolower($name), '/') . '\b/u', $text)) {
+                return $slug;
+            }
+        }
+    }
+
+    if (preg_match('/\b(AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|IA|ID|IL|IN|KS|KY|LA|MA|MD|ME|MI|MN|MO|MS|MT|NC|ND|NE|NH|NJ|NM|NV|NY|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VA|VT|WA|WI|WV|WY)\b/', $location)) {
+        return 'united-states';
+    }
+
+    return '';
+}
+
+function aitomic_country_name_from_slug(string $slug): string {
+    if ($slug === 'global-international') {
+        return 'Global/International';
+    }
+    if (function_exists('go_countries')) {
+        $countries = go_countries();
+        if (isset($countries[$slug])) {
+            return $countries[$slug];
+        }
+    }
+    return ucwords(str_replace('-', ' ', $slug));
+}
+
+function aitomic_country_value_for_item(array $item): string {
+    $country = aitomic_import_value($item, 'country');
+    $location = aitomic_import_value($item, 'location');
+    $work_mode = strtolower(aitomic_import_value($item, 'work_mode'));
+    $generic = $country === '' || preg_match('/^(global\/international|global|international|various|multiple|remote \/ various|not specified|not specified \/ see official listing)$/i', $country);
+
+    if ($generic) {
+        $slug = aitomic_country_slug_from_location($location);
+        if ($slug !== '') {
+            return aitomic_country_name_from_slug($slug);
+        }
+        return str_contains($work_mode, 'remote') ? 'Remote' : 'Global/International';
+    }
+
+    return $country;
+}
+
 function aitomic_assign_term_value(int $post_id, string $taxonomy, string $value): void {
     $value = trim($value);
     if ($value === '') {
@@ -172,7 +302,7 @@ function aitomic_assign_term_value(int $post_id, string $taxonomy, string $value
 function aitomic_assign_imported_terms(int $post_id, array $item): void {
     aitomic_assign_term_value($post_id, 'opportunity_type', aitomic_import_value($item, 'opportunity_type'));
     aitomic_assign_term_value($post_id, 'opportunity_category', aitomic_import_value($item, 'category'));
-    aitomic_assign_term_value($post_id, 'country', aitomic_import_value($item, 'country'));
+    aitomic_assign_term_value($post_id, 'country', aitomic_country_value_for_item($item));
     aitomic_assign_term_value($post_id, 'work_mode', aitomic_import_value($item, 'work_mode'));
 }
 
@@ -244,7 +374,7 @@ foreach ($items as $item) {
     update_post_meta($post_id, '_go_organization', $organization);
     update_post_meta($post_id, '_go_opportunity_type', $type);
     update_post_meta($post_id, '_go_category', sanitize_text_field(aitomic_import_value($item, 'category')));
-    update_post_meta($post_id, '_go_country', $country);
+    update_post_meta($post_id, '_go_country', sanitize_text_field(aitomic_country_value_for_item($item)));
     update_post_meta($post_id, '_go_location', sanitize_text_field(aitomic_import_value($item, 'location', $country)));
     update_post_meta($post_id, '_go_work_mode', sanitize_text_field(aitomic_import_value($item, 'work_mode', 'On-site')));
     update_post_meta($post_id, '_go_compensation', sanitize_text_field(aitomic_import_value($item, 'compensation', 'Not specified')));
