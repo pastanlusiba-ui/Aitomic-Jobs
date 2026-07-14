@@ -57,6 +57,24 @@ function aitomic_import_content(array $item): string {
         . '<p>Source: <a href="' . $source_url . '">' . $source . '</a>.</p>';
 }
 
+function aitomic_import_key(array $item): string {
+    $parts = [
+        strtolower(aitomic_import_value($item, 'title')),
+        strtolower(aitomic_import_value($item, 'organization')),
+        strtolower(aitomic_import_value($item, 'source_url')),
+    ];
+    return hash('sha256', implode('|', $parts));
+}
+
+function aitomic_is_generic_source_url(string $source_url): bool {
+    $parts = wp_parse_url($source_url);
+    $path = trim((string) ($parts['path'] ?? ''), '/');
+    if ($path === '' || preg_match('/^(careers?|jobs?|employment|vacancies?|procurement|working-with-us)$/i', $path)) {
+        return true;
+    }
+    return (bool) preg_match('/(careers\.|jobs\.|\/careers?$|\/employment$|\/procurement$)/i', $source_url);
+}
+
 $created = 0;
 $skipped = 0;
 $errors = 0;
@@ -75,8 +93,8 @@ foreach ($items as $item) {
         'post_status' => 'any',
         'fields' => 'ids',
         'posts_per_page' => 1,
-        'meta_key' => '_go_source_url',
-        'meta_value' => $source_url,
+        'meta_key' => '_go_import_key',
+        'meta_value' => aitomic_import_key($item),
     ]);
     if ($existing) {
         $skipped++;
@@ -87,6 +105,21 @@ foreach ($items as $item) {
     if (get_page_by_path($slug, OBJECT, 'opportunity')) {
         $skipped++;
         continue;
+    }
+
+    if (!aitomic_is_generic_source_url($source_url)) {
+        $existing_source = get_posts([
+            'post_type' => 'opportunity',
+            'post_status' => 'any',
+            'fields' => 'ids',
+            'posts_per_page' => 1,
+            'meta_key' => '_go_source_url',
+            'meta_value' => $source_url,
+        ]);
+        if ($existing_source) {
+            $skipped++;
+            continue;
+        }
     }
 
     $type = sanitize_text_field(aitomic_import_value($item, 'opportunity_type', 'Jobs'));
@@ -117,6 +150,7 @@ foreach ($items as $item) {
     update_post_meta($post_id, '_go_deadline', sanitize_text_field(aitomic_import_value($item, 'deadline')));
     update_post_meta($post_id, '_go_source', sanitize_text_field(aitomic_import_value($item, 'source', $organization)));
     update_post_meta($post_id, '_go_source_url', $source_url);
+    update_post_meta($post_id, '_go_import_key', aitomic_import_key($item));
     update_post_meta($post_id, '_go_application_link', esc_url_raw(aitomic_import_value($item, 'application_link', $source_url)));
     update_post_meta($post_id, '_go_institution_url', esc_url_raw(aitomic_import_value($item, 'institution_url')));
     update_post_meta($post_id, '_go_discovery_listing_page', esc_url_raw(aitomic_import_value($item, 'discovery_listing_page')));
