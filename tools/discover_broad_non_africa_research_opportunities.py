@@ -17,8 +17,14 @@ import pandas as pd
 
 PROJECT = Path("/Users/pastanlusiba/Library/CloudStorage/GoogleDrive-pastanlusiba@gmail.com/My Drive/Working folder/Apps/Aitomic Jobs")
 DB = PROJECT / "data" / "aitomic_institution_source_database.xlsx"
-OUT = PROJECT / "data" / "research_database_opportunity_candidates_broad_non_africa_2026-07-14.json"
-HIGH = PROJECT / "data" / "imported_research_database_opportunities_broad_non_africa_2026-07-14.json"
+OUT = Path(os.environ.get(
+    "AITOMIC_OUT_FILE",
+    PROJECT / "data" / "research_database_opportunity_candidates_broad_non_africa_2026-07-14.json",
+))
+HIGH = Path(os.environ.get(
+    "AITOMIC_HIGH_FILE",
+    PROJECT / "data" / "imported_research_database_opportunities_broad_non_africa_2026-07-14.json",
+))
 
 TODAY = date(2026, 7, 14)
 UA = "AitomicJobsOpportunityDiscovery/2.0 (+https://aitomic.net)"
@@ -336,21 +342,22 @@ def load_sources():
 def main():
     sources = load_sources()
     max_sources = int(os.environ.get("AITOMIC_MAX_SOURCES", "500"))
+    offset = int(os.environ.get("AITOMIC_SOURCE_OFFSET", "0"))
     if os.environ.get("AITOMIC_BALANCED", "1") == "1":
         grouped = defaultdict(list)
         for source in sources:
             grouped[source["countries_covered"]].append(source)
         balanced = []
         countries = sorted(grouped)
-        while len(balanced) < max_sources and any(grouped.values()):
+        target = offset + max_sources
+        while len(balanced) < target and any(grouped.values()):
             for country in countries:
                 if grouped[country]:
                     balanced.append(grouped[country].pop(0))
-                    if len(balanced) >= max_sources:
+                    if len(balanced) >= target:
                         break
-        sources = balanced
+        sources = balanced[offset:target]
     else:
-        offset = int(os.environ.get("AITOMIC_SOURCE_OFFSET", "0"))
         sources = sources[offset:offset + max_sources]
     print(f"sources={len(sources)}")
     results = []
