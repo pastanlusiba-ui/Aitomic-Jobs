@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from collections import Counter
 from datetime import date, datetime
@@ -6,8 +7,14 @@ from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 PROJECT = Path("/Users/pastanlusiba/Library/CloudStorage/GoogleDrive-pastanlusiba@gmail.com/My Drive/Working folder/Apps/Aitomic Jobs")
-INFILE = PROJECT / "data" / "research_database_opportunity_candidates_broad_africa_2026-07-14.json"
-OUTFILE = PROJECT / "data" / "imported_research_database_opportunities_broad_africa_publish_2026-07-14.json"
+INFILE = Path(os.environ.get(
+    "AITOMIC_CANDIDATE_FILE",
+    PROJECT / "data" / "research_database_opportunity_candidates_broad_africa_2026-07-14.json",
+))
+OUTFILE = Path(os.environ.get(
+    "AITOMIC_PUBLISH_FILE",
+    PROJECT / "data" / "imported_research_database_opportunities_broad_africa_publish_2026-07-14.json",
+))
 TODAY = date(2026, 7, 14)
 
 MONTHS = {
