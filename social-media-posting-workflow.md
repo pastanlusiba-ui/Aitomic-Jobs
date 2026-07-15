@@ -1,15 +1,12 @@
-# Aitomic Jobs Social Posting Workflow
+# Aitomic Jobs LinkedIn Posting Workflow
 
 ## Goal
 
-Publish selected opportunities from Aitomic Jobs to social media while driving traffic back to the Aitomic Jobs opportunity detail page.
+Publish selected opportunities from Aitomic Jobs to LinkedIn while driving traffic back to the Aitomic Jobs opportunity detail page.
 
-## Recommended Channels
+## Channel
 
-- LinkedIn page: primary professional channel for jobs, consultancies, internships, and tenders.
-- Facebook page: broad public reach and community sharing.
-- X: short opportunity alerts with country/type hashtags.
-- WhatsApp / Telegram channels: concise opportunity alerts for subscribers.
+- LinkedIn page: the only active social channel for this workflow.
 
 ## Posting Rule
 
@@ -20,7 +17,7 @@ Every post should link to the Aitomic Jobs detail page, not directly to the sour
 Use the WP-CLI helper:
 
 ```bash
-wp eval-file wp-content/uploads/generate_social_media_queue.php limit=50
+wp eval-file /home/u710255073/aitomic-tools/generate_social_media_queue.php limit=50
 ```
 
 Useful options:
@@ -32,18 +29,17 @@ Useful options:
 
 The script creates:
 
-- A CSV queue for manual posting or upload into a scheduler.
-- A JSON queue for automation or API posting.
+- A LinkedIn-only CSV queue for manual posting or upload into a LinkedIn-capable scheduler.
+- A LinkedIn-only JSON queue for automation.
 
 ## Review Checklist
 
 - Confirm the opportunity is still open if it has a deadline.
 - Confirm the country and opportunity type look right.
-- Use the LinkedIn text for LinkedIn.
-- Use the Facebook text for Facebook.
-- Use the X text for X.
-- Use the WhatsApp / Telegram text for direct channels.
+- Use the `linkedin_text` field as the post copy.
+- Keep the Aitomic Jobs URL in the post so traffic returns to the website.
+- Update `status`, `scheduled_for`, and `posted_url` after scheduling or publishing.
 
 ## Next Automation Step
 
-Once the social media accounts are ready, connect the CSV/JSON queue to a scheduler such as Buffer, Meta Business Suite, LinkedIn Page admin tools, or a custom API posting script.
+Once the LinkedIn page is ready, connect the CSV/JSON queue to a scheduler that supports LinkedIn pages, or use a custom LinkedIn API posting script.

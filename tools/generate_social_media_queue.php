@@ -92,28 +92,14 @@ function aitomic_social_record(int $post_id): array {
     $work_mode = aitomic_social_term_list($post_id, 'work_mode') ?: aitomic_social_meta($post_id, 'work_mode');
     $deadline = aitomic_social_deadline_label($post_id);
     $url = get_permalink($post_id);
-    $short_url = home_url('/?p=' . $post_id);
     $source_url = aitomic_social_meta($post_id, 'source_link') ?: aitomic_social_meta($post_id, 'source_url');
     $hashtags = aitomic_social_hashtags($type, $country);
     $base = trim($title . ' - ' . $organization);
     $context = trim(implode(' | ', array_filter([$type, $country, $work_mode, $deadline])));
 
     $linkedin = aitomic_social_trim(
-        "Opportunity alert: {$base}\n\n{$context}\n\nSee the structured details and application link on Aitomic Jobs:\n{$url}\n\n{$hashtags}",
+        "Opportunity alert: {$base}\n\n{$context}\n\nSee the structured details and official application link on Aitomic Jobs:\n{$url}\n\n{$hashtags}",
         1200
-    );
-    $facebook = aitomic_social_trim(
-        "New opportunity on Aitomic Jobs: {$base}.\n\n{$context}\n\nDetails and application link: {$url}\n\n{$hashtags}",
-        900
-    );
-    $short_context = aitomic_social_trim($context, 90);
-    $fixed_x = "\n{$short_context}\n{$short_url}\n{$hashtags}";
-    $base_limit = max(40, 275 - strlen($fixed_x));
-    $short_base = aitomic_social_trim($base, $base_limit);
-    $x = aitomic_social_trim("{$short_base}{$fixed_x}", 275);
-    $whatsapp = aitomic_social_trim(
-        "*Opportunity:* {$base}\n{$context}\nDetails: {$url}",
-        700
     );
 
     return [
@@ -125,13 +111,11 @@ function aitomic_social_record(int $post_id): array {
         'work_mode' => $work_mode,
         'deadline' => aitomic_social_meta($post_id, 'deadline'),
         'url' => $url,
-        'short_url' => $short_url,
         'source_url' => $source_url,
         'linkedin_text' => $linkedin,
-        'facebook_text' => $facebook,
-        'x_text' => $x,
-        'whatsapp_telegram_text' => $whatsapp,
         'status' => 'Ready',
+        'scheduled_for' => '',
+        'posted_url' => '',
         'notes' => '',
     ];
 }
@@ -152,11 +136,11 @@ $query = new WP_Query([
     'meta_query' => [
         'relation' => 'OR',
         [
-            'key' => '_go_social_queued_at',
+            'key' => '_go_linkedin_queued_at',
             'compare' => 'NOT EXISTS',
         ],
         [
-            'key' => '_go_social_queued_at',
+            'key' => '_go_linkedin_queued_at',
             'value' => '',
             'compare' => '=',
         ],
@@ -170,14 +154,14 @@ foreach ($query->posts as $post_id) {
     }
     $rows[] = aitomic_social_record((int) $post_id);
     if ($mark) {
-        update_post_meta((int) $post_id, '_go_social_queued_at', current_time('mysql'));
+        update_post_meta((int) $post_id, '_go_linkedin_queued_at', current_time('mysql'));
     }
 }
 
 $upload_dir = wp_upload_dir();
 $stamp = current_time('Y-m-d-His');
-$csv_file = trailingslashit($upload_dir['basedir']) . "aitomic-social-posting-queue-{$stamp}.csv";
-$json_file = trailingslashit($upload_dir['basedir']) . "aitomic-social-posting-queue-{$stamp}.json";
+$csv_file = trailingslashit($upload_dir['basedir']) . "aitomic-linkedin-posting-queue-{$stamp}.csv";
+$json_file = trailingslashit($upload_dir['basedir']) . "aitomic-linkedin-posting-queue-{$stamp}.json";
 
 $headers = [
     'post_id',
@@ -188,13 +172,11 @@ $headers = [
     'work_mode',
     'deadline',
     'url',
-    'short_url',
     'source_url',
     'linkedin_text',
-    'facebook_text',
-    'x_text',
-    'whatsapp_telegram_text',
     'status',
+    'scheduled_for',
+    'posted_url',
     'notes',
 ];
 
@@ -208,8 +190,9 @@ fclose($handle);
 file_put_contents($json_file, wp_json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
 echo wp_json_encode([
+    'platform' => 'LinkedIn',
     'generated' => count($rows),
     'csv' => str_replace(ABSPATH, home_url('/'), $csv_file),
     'json' => str_replace(ABSPATH, home_url('/'), $json_file),
-    'marked_as_queued' => $mark,
+    'marked_as_linkedin_queued' => $mark,
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
