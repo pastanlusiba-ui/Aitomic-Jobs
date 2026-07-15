@@ -480,6 +480,174 @@ function go_render_opportunity_meta_list(int $post_id): string
     return $html;
 }
 
+function go_plain_text(string $text): string
+{
+    $text = html_entity_decode(wp_strip_all_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $text = preg_replace("/\r\n?/", "\n", $text);
+    $text = preg_replace('/[ \t]+/', ' ', $text);
+    $text = preg_replace("/\n{3,}/", "\n\n", $text);
+
+    return trim((string) $text);
+}
+
+function go_trim_text(string $text, int $limit): string
+{
+    $text = go_plain_text($text);
+    if (strlen($text) <= $limit) {
+        return $text;
+    }
+
+    $cut = substr($text, 0, max(0, $limit - 3));
+    $space = strrpos($cut, ' ');
+    if ($space !== false && $space > 40) {
+        $cut = substr($cut, 0, $space);
+    }
+
+    return rtrim($cut, " \t\n\r\0\x0B.,;:") . '...';
+}
+
+function go_term_names(int $post_id, string $taxonomy): string
+{
+    $terms = get_the_terms($post_id, $taxonomy);
+    if (!$terms || is_wp_error($terms)) {
+        return '';
+    }
+
+    return implode(', ', wp_list_pluck($terms, 'name'));
+}
+
+function go_content_detail(int $post_id, string $label): string
+{
+    $content = (string) get_post_field('post_content', $post_id);
+    if ($content === '') {
+        return '';
+    }
+
+    $pattern = '/<li>\s*<strong>\s*' . preg_quote($label, '/') . '\s*:\s*<\/strong>\s*(.*?)<\/li>/is';
+    if (!preg_match($pattern, $content, $matches)) {
+        return '';
+    }
+
+    return go_plain_text($matches[1]);
+}
+
+function go_deadline_label(int $post_id): string
+{
+    $deadline = trim(go_get_meta($post_id, 'deadline')) ?: go_content_detail($post_id, 'Application deadline');
+    if ($deadline === '') {
+        return 'Not specified';
+    }
+
+    $timestamp = strtotime($deadline);
+    if (!$timestamp) {
+        return $deadline;
+    }
+
+    return date_i18n('M j, Y', $timestamp);
+}
+
+function go_social_hashtags(int $post_id, string $type, string $country, string $category): string
+{
+    $tags = ['#AitomicJobs', '#Opportunities', '#CareerOpportunity'];
+    $type_lower = strtolower($type);
+    $category_lower = strtolower($category);
+
+    if (str_contains($type_lower, 'intern')) {
+        $tags[] = '#Internship';
+        $tags[] = '#Students';
+        $tags[] = '#YoungProfessionals';
+    } elseif (str_contains($type_lower, 'consult') || str_contains($type_lower, 'tender')) {
+        $tags[] = '#Consultancies';
+        $tags[] = '#Procurement';
+    } elseif (str_contains($type_lower, 'remote')) {
+        $tags[] = '#RemoteJobs';
+    } elseif (str_contains($type_lower, 'volunteer')) {
+        $tags[] = '#VolunteerOpportunities';
+    } elseif (str_contains($type_lower, 'training') || str_contains($type_lower, 'course')) {
+        $tags[] = '#Training';
+        $tags[] = '#ShortCourses';
+    } else {
+        $tags[] = '#Jobs';
+        $tags[] = '#Hiring';
+    }
+
+    if (str_contains($category_lower, 'health')) {
+        $tags[] = '#GlobalHealth';
+    } elseif (str_contains($category_lower, 'education')) {
+        $tags[] = '#Education';
+    } elseif (str_contains($category_lower, 'communication')) {
+        $tags[] = '#Communications';
+    } elseif (str_contains($category_lower, 'agriculture')) {
+        $tags[] = '#Agriculture';
+    } elseif (str_contains($category_lower, 'humanitarian') || str_contains($category_lower, 'development')) {
+        $tags[] = '#InternationalDevelopment';
+    } elseif (str_contains($category_lower, 'information') || str_contains($category_lower, 'technology')) {
+        $tags[] = '#Technology';
+    }
+
+    $country_tag = preg_replace('/[^A-Za-z0-9]/', '', $country);
+    if ($country_tag !== '' && !in_array(strtolower($country), ['global/international', 'global', 'international', 'remote', 'various', 'multiple'], true)) {
+        $tags[] = '#' . $country_tag;
+    }
+
+    return implode(' ', array_slice(array_unique($tags), 0, 10));
+}
+
+function go_linkedin_opportunity_share_text(string $content, int $post_id): string
+{
+    if (get_post_type($post_id) !== 'opportunity') {
+        return $content;
+    }
+
+    $title = go_plain_text(get_the_title($post_id));
+    $organization = go_plain_text(go_get_meta($post_id, 'organization'));
+    $type = go_term_names($post_id, 'opportunity_type') ?: go_get_meta($post_id, 'employment_type');
+    $category = go_term_names($post_id, 'opportunity_category');
+    $focus = go_content_detail($post_id, 'Category');
+    $country = go_term_names($post_id, 'country');
+    $work_mode = go_term_names($post_id, 'work_mode') ?: go_get_meta($post_id, 'remote_option');
+    $location = go_get_meta($post_id, 'city');
+    $duration = go_get_meta($post_id, 'duration');
+    $start_date = go_get_meta($post_id, 'start_date');
+    $compensation = go_get_meta($post_id, 'salary') ?: go_content_detail($post_id, 'Compensation');
+    $deadline = go_deadline_label($post_id);
+    $eligibility = go_trim_text(go_get_meta($post_id, 'eligibility'), 360);
+    $summary = go_trim_text(get_the_excerpt($post_id) ?: get_post_field('post_content', $post_id), 430);
+    $url = get_permalink($post_id);
+    $hashtags = go_social_hashtags($post_id, $type, $country, $category);
+
+    $location_bits = array_filter([$location, $country]);
+    $detail_lines = array_filter([
+        $organization !== '' ? 'Organization: ' . $organization : '',
+        $type !== '' ? 'Opportunity type: ' . $type : '',
+        $category !== '' ? 'Sector: ' . $category : '',
+        $focus !== '' && $focus !== $category ? 'Focus: ' . $focus : '',
+        !empty($location_bits) ? 'Location: ' . implode(', ', $location_bits) : '',
+        $work_mode !== '' ? 'Work mode: ' . $work_mode : '',
+        'Deadline: ' . $deadline,
+        $start_date !== '' ? 'Start date: ' . $start_date : '',
+        $duration !== '' ? 'Duration: ' . $duration : '',
+        $compensation !== '' ? 'Compensation: ' . $compensation : '',
+    ]);
+
+    $parts = [
+        'Opportunity alert: ' . $title,
+        $summary,
+        "Key details\n" . implode("\n", $detail_lines),
+    ];
+
+    if ($eligibility !== '' && $eligibility !== $summary) {
+        $parts[] = "Who should consider this\n" . $eligibility;
+    }
+
+    $parts[] = "What to review on Aitomic Jobs\nFull description, responsibilities or submission instructions, eligibility requirements, benefits or compensation notes, and the official source link.";
+    $parts[] = "Full details and official application link\n" . $url;
+    $parts[] = $hashtags;
+
+    return go_trim_text(implode("\n\n", array_filter($parts)), 2700);
+}
+add_filter('wp_linkedin_auto_publish_customise_content', 'go_linkedin_opportunity_share_text', 10, 2);
+
 
 function go_ordered_country_term_ids(): array
 {

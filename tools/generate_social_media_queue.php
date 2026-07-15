@@ -25,6 +25,18 @@ function aitomic_social_meta(int $post_id, string $key): string {
     return trim((string) $value);
 }
 
+function aitomic_social_content_detail(int $post_id, string $label): string {
+    $content = (string) get_post_field('post_content', $post_id);
+    if ($content === '') {
+        return '';
+    }
+    $pattern = '/<li>\s*<strong>\s*' . preg_quote($label, '/') . '\s*:\s*<\/strong>\s*(.*?)<\/li>/is';
+    if (!preg_match($pattern, $content, $matches)) {
+        return '';
+    }
+    return aitomic_social_trim($matches[1], 220);
+}
+
 function aitomic_social_trim(string $text, int $limit): string {
     $text = html_entity_decode(wp_strip_all_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
     $text = preg_replace("/\r\n?/", "\n", $text);
@@ -43,7 +55,7 @@ function aitomic_social_trim(string $text, int $limit): string {
 }
 
 function aitomic_social_deadline_label(int $post_id): string {
-    $deadline = aitomic_social_meta($post_id, 'deadline');
+    $deadline = aitomic_social_meta($post_id, 'deadline') ?: aitomic_social_content_detail($post_id, 'Application deadline');
     if ($deadline === '') {
         return 'Deadline not specified';
     }
@@ -64,49 +76,123 @@ function aitomic_social_is_expired(int $post_id): bool {
 }
 
 function aitomic_social_hashtags(string $type, string $country): string {
-    $tags = ['#AitomicJobs'];
+    $tags = ['#AitomicJobs', '#Opportunities', '#CareerOpportunity'];
     $type_lower = strtolower($type);
     if (str_contains($type_lower, 'intern')) {
-        $tags[] = '#Internships';
+        $tags[] = '#Internship';
+        $tags[] = '#Students';
+        $tags[] = '#YoungProfessionals';
     } elseif (str_contains($type_lower, 'tender') || str_contains($type_lower, 'consult')) {
         $tags[] = '#Consultancies';
+        $tags[] = '#Procurement';
     } elseif (str_contains($type_lower, 'remote')) {
         $tags[] = '#RemoteJobs';
     } elseif (str_contains($type_lower, 'volunteer')) {
         $tags[] = '#VolunteerOpportunities';
+    } elseif (str_contains($type_lower, 'training') || str_contains($type_lower, 'course')) {
+        $tags[] = '#Training';
+        $tags[] = '#ShortCourses';
     } else {
         $tags[] = '#Jobs';
+        $tags[] = '#Hiring';
     }
     $country_tag = preg_replace('/[^A-Za-z0-9]/', '', $country);
-    if ($country_tag !== '' && !in_array(strtolower($country), ['global/international', 'remote', 'various'], true)) {
+    if ($country_tag !== '' && !in_array(strtolower($country), ['global/international', 'global', 'international', 'remote', 'various', 'multiple'], true)) {
         $tags[] = '#' . $country_tag;
     }
-    return implode(' ', array_slice(array_unique($tags), 0, 4));
+    return implode(' ', array_slice(array_unique($tags), 0, 10));
+}
+
+function aitomic_social_category_hashtags(string $category): array {
+    $category_lower = strtolower($category);
+    if (str_contains($category_lower, 'health')) {
+        return ['#GlobalHealth'];
+    }
+    if (str_contains($category_lower, 'education')) {
+        return ['#Education'];
+    }
+    if (str_contains($category_lower, 'communication')) {
+        return ['#Communications'];
+    }
+    if (str_contains($category_lower, 'agriculture')) {
+        return ['#Agriculture'];
+    }
+    if (str_contains($category_lower, 'humanitarian') || str_contains($category_lower, 'development')) {
+        return ['#InternationalDevelopment'];
+    }
+    if (str_contains($category_lower, 'information') || str_contains($category_lower, 'technology')) {
+        return ['#Technology'];
+    }
+    return [];
+}
+
+function aitomic_social_summary(int $post_id): string {
+    $excerpt = get_the_excerpt($post_id);
+    if ($excerpt !== '') {
+        return aitomic_social_trim($excerpt, 430);
+    }
+    return aitomic_social_trim((string) get_post_field('post_content', $post_id), 430);
+}
+
+function aitomic_social_linkedin_text(int $post_id, string $title, string $organization, string $type, string $category, string $country, string $work_mode, string $url): string {
+    $location = aitomic_social_meta($post_id, 'city');
+    $duration = aitomic_social_meta($post_id, 'duration');
+    $start_date = aitomic_social_meta($post_id, 'start_date');
+    $compensation = aitomic_social_meta($post_id, 'salary') ?: aitomic_social_content_detail($post_id, 'Compensation');
+    $deadline = str_replace('Deadline: ', '', aitomic_social_deadline_label($post_id));
+    $eligibility = aitomic_social_trim(aitomic_social_meta($post_id, 'eligibility'), 360);
+    $summary = aitomic_social_summary($post_id);
+    $focus = aitomic_social_content_detail($post_id, 'Category');
+    $location_bits = array_filter([$location, $country]);
+    $tags = trim(aitomic_social_hashtags($type, $country) . ' ' . implode(' ', aitomic_social_category_hashtags($category)));
+
+    $detail_lines = array_filter([
+        $organization !== '' ? 'Organization: ' . $organization : '',
+        $type !== '' ? 'Opportunity type: ' . $type : '',
+        $category !== '' ? 'Sector: ' . $category : '',
+        $focus !== '' && $focus !== $category ? 'Focus: ' . $focus : '',
+        !empty($location_bits) ? 'Location: ' . implode(', ', $location_bits) : '',
+        $work_mode !== '' ? 'Work mode: ' . $work_mode : '',
+        'Deadline: ' . $deadline,
+        $start_date !== '' ? 'Start date: ' . $start_date : '',
+        $duration !== '' ? 'Duration: ' . $duration : '',
+        $compensation !== '' ? 'Compensation: ' . $compensation : '',
+    ]);
+
+    $parts = [
+        'Opportunity alert: ' . $title,
+        $summary,
+        "Key details\n" . implode("\n", $detail_lines),
+    ];
+
+    if ($eligibility !== '' && $eligibility !== $summary) {
+        $parts[] = "Who should consider this\n" . $eligibility;
+    }
+
+    $parts[] = "What to review on Aitomic Jobs\nFull description, responsibilities or submission instructions, eligibility requirements, benefits or compensation notes, and the official source link.";
+    $parts[] = "Full details and official application link\n" . $url;
+    $parts[] = $tags;
+
+    return aitomic_social_trim(implode("\n\n", array_filter($parts)), 2700);
 }
 
 function aitomic_social_record(int $post_id): array {
     $title = html_entity_decode(get_the_title($post_id), ENT_QUOTES | ENT_HTML5, 'UTF-8');
     $organization = html_entity_decode(aitomic_social_meta($post_id, 'organization'), ENT_QUOTES | ENT_HTML5, 'UTF-8');
     $type = aitomic_social_term_list($post_id, 'opportunity_type') ?: aitomic_social_meta($post_id, 'employment_type');
+    $category = aitomic_social_term_list($post_id, 'opportunity_category');
     $country = aitomic_social_term_list($post_id, 'country') ?: aitomic_social_meta($post_id, 'country');
     $work_mode = aitomic_social_term_list($post_id, 'work_mode') ?: aitomic_social_meta($post_id, 'work_mode');
-    $deadline = aitomic_social_deadline_label($post_id);
     $url = get_permalink($post_id);
     $source_url = aitomic_social_meta($post_id, 'source_link') ?: aitomic_social_meta($post_id, 'source_url');
-    $hashtags = aitomic_social_hashtags($type, $country);
-    $base = trim($title . ' - ' . $organization);
-    $context = trim(implode(' | ', array_filter([$type, $country, $work_mode, $deadline])));
-
-    $linkedin = aitomic_social_trim(
-        "Opportunity alert: {$base}\n\n{$context}\n\nSee the structured details and official application link on Aitomic Jobs:\n{$url}\n\n{$hashtags}",
-        1200
-    );
+    $linkedin = aitomic_social_linkedin_text($post_id, $title, $organization, $type, $category, $country, $work_mode, $url);
 
     return [
         'post_id' => $post_id,
         'title' => $title,
         'organization' => $organization,
         'opportunity_type' => $type,
+        'category' => $category,
         'country' => $country,
         'work_mode' => $work_mode,
         'deadline' => aitomic_social_meta($post_id, 'deadline'),
@@ -168,6 +254,7 @@ $headers = [
     'title',
     'organization',
     'opportunity_type',
+    'category',
     'country',
     'work_mode',
     'deadline',
