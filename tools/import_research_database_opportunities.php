@@ -27,7 +27,9 @@ function aitomic_import_content(array $item): string {
     $compensation = esc_html(aitomic_import_value($item, 'compensation', 'Not specified'));
     $source = esc_html(aitomic_import_value($item, 'source', aitomic_import_value($item, 'organization')));
     $source_url = esc_url(aitomic_import_value($item, 'source_url'));
-    $summary = "This is an official {$type} opportunity from {$organization} in {$country}. Review the official source page for the full announcement, eligibility requirements, application documents, and submission instructions.";
+    $default_summary = "This is an official {$type} opportunity from {$organization} in {$country}. Review the official source page for the full announcement, eligibility requirements, application documents, and submission instructions.";
+    $summary = aitomic_import_value($item, 'summary', $default_summary);
+    $description = aitomic_import_value($item, 'description', $summary);
 
     return '<h2>Short Summary</h2>'
         . '<p>' . esc_html($summary) . '</p>'
@@ -44,7 +46,7 @@ function aitomic_import_content(array $item): string {
         . '<li><strong>Application deadline:</strong> ' . ($deadline ?: 'Not specified by source') . '</li>'
         . '</ul>'
         . '<h2>Description</h2>'
-        . '<p>' . esc_html($summary) . '</p>'
+        . '<p>' . esc_html($description) . '</p>'
         . '<h2>Responsibilities</h2>'
         . '<ul><li>Review the official opportunity page for role, tender, consultancy, call, or volunteer-specific responsibilities.</li><li>Follow the instructions, format, and submission channel stated by the source institution.</li><li>Prepare all supporting documents requested by the source before applying or submitting.</li></ul>'
         . '<h2>Requirements / Eligibility</h2>'
@@ -355,7 +357,11 @@ foreach ($items as $item) {
 
     $type = sanitize_text_field(aitomic_import_value($item, 'opportunity_type', 'Jobs'));
     $country = sanitize_text_field(aitomic_import_value($item, 'country'));
-    $summary = sanitize_text_field("Official {$type} opportunity from {$organization}" . ($country ? " in {$country}" : '') . ".");
+    $summary = sanitize_text_field(aitomic_import_value(
+        $item,
+        'summary',
+        "Official {$type} opportunity from {$organization}" . ($country ? " in {$country}" : '') . "."
+    ));
 
     $post_id = wp_insert_post([
         'post_type' => 'opportunity',
