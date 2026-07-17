@@ -22,9 +22,16 @@ body {
     color: var(--ink);
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     line-height: 1.58;
+    overflow-x: hidden;
 }
 
 a { color: var(--blue); }
+
+img,
+svg {
+    max-width: 100%;
+    height: auto;
+}
 
 .container {
     width: min(1180px, calc(100% - 32px));
@@ -307,6 +314,7 @@ h3 { font-size: 22px; }
 .opportunity-search input,
 .opportunity-search select {
     width: 100%;
+    min-width: 0;
     min-height: 48px;
     border: 1px solid rgba(232, 93, 63, 0.58);
     border-radius: 12px;
@@ -509,6 +517,11 @@ h3 { font-size: 22px; }
 
 .content-body { padding: 30px; }
 
+.content-body,
+.content-body * {
+    overflow-wrap: anywhere;
+}
+
 .details-panel {
     position: sticky;
     top: 88px;
@@ -540,9 +553,19 @@ h3 { font-size: 22px; }
     .hero-grid,
     .single-layout { grid-template-columns: 1fr; }
     .opportunity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .details-panel {
+        position: static;
+        top: auto;
+    }
 }
 
 @media (max-width: 760px) {
+    .container,
+    .narrow {
+        width: min(100% - 28px, 680px);
+    }
+
     .header-inner,
     .footer-inner,
     .section-heading.split {
@@ -550,15 +573,290 @@ h3 { font-size: 22px; }
         align-items: flex-start;
     }
 
+    .header-inner {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        padding: 10px 0 12px;
+    }
+
+    .site-brand {
+        min-width: 0;
+    }
+
+    .site-logo {
+        width: min(190px, 58vw);
+        max-height: 50px;
+    }
+
+    .site-nav {
+        grid-column: 1 / -1;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .site-nav ul {
+        flex-wrap: nowrap;
+        gap: 14px;
+        width: max-content;
+        min-width: 100%;
+        padding-bottom: 2px;
+    }
+
+    .site-nav a {
+        display: inline-flex;
+        min-height: 34px;
+        align-items: center;
+        white-space: nowrap;
+    }
+
+    .header-cta {
+        width: auto;
+        min-height: 36px;
+        padding: 6px 14px;
+        font-size: 14px;
+        justify-content: center;
+        white-space: nowrap;
+    }
+
+    .opportunity-type-ribbon {
+        padding: 10px 0;
+    }
+
+    .ribbon-inner {
+        display: block;
+    }
+
+    .ribbon-label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 12px;
+    }
+
+    .ribbon-links {
+        flex-wrap: nowrap;
+        gap: 8px;
+        margin-inline: -14px;
+        padding: 2px 14px 5px;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .ribbon-links a {
+        min-height: 40px;
+        padding: 9px 15px;
+        scroll-snap-align: start;
+        box-shadow: none;
+    }
+
+    .hero {
+        padding: 42px 0 34px;
+        background-size: 38px 38px, auto;
+    }
+
+    .hero-grid {
+        gap: 26px;
+    }
+
+    .hero-copy {
+        font-size: 17px;
+    }
+
+    .hero-panel {
+        border-radius: 12px;
+        padding: 18px;
+    }
+
+    .category-band {
+        padding: 34px 0 40px;
+    }
+
+    .category-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow-x: visible;
+    }
+
+    .category-grid a {
+        min-height: 118px;
+        border-radius: 12px;
+        padding: 13px;
+    }
+
+    .page-heading,
+    .single-hero {
+        padding: 34px 0;
+    }
+
+    .section {
+        padding: 34px 0 46px;
+    }
+
     .opportunity-search { grid-template-columns: 1fr; }
     .opportunity-grid { grid-template-columns: 1fr; }
 
-    .ribbon-inner { align-items: flex-start; }
-    .ribbon-links { flex-wrap: wrap; overflow-x: visible; }
-    h1 { font-size: 40px; }
-    .site-nav ul,
+    .opportunity-search label:first-of-type,
+    .opportunity-search button {
+        grid-column: auto;
+    }
+
+    .opportunity-search input,
+    .opportunity-search select,
+    .opportunity-search button {
+        min-height: 46px;
+        border-radius: 10px;
+    }
+
+    h1 { font-size: 36px; }
+    h2 { font-size: 28px; }
+    h3 { font-size: 20px; }
+
     .quick-links { flex-wrap: wrap; }
-    .header-cta { width: 100%; justify-content: center; }
+
+    .opportunity-card {
+        grid-template-rows: auto;
+        min-height: 0;
+        gap: 12px;
+        padding: 17px;
+    }
+
+    .opportunity-card h3 {
+        font-size: 19px;
+    }
+
+    .card-footer {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .card-footer a {
+        width: 100%;
+        min-height: 40px;
+    }
+
+    .pagination {
+        margin-top: 24px;
+        padding: 18px 0 0;
+    }
+
+    .pagination-links {
+        width: 100%;
+        gap: 7px;
+    }
+
+    .pagination .page-numbers {
+        min-width: 38px;
+        min-height: 38px;
+        padding: 7px 10px;
+    }
+
+    .pagination .page-numbers.prev,
+    .pagination .page-numbers.next {
+        flex: 1 1 128px;
+    }
+
+    .single-layout {
+        gap: 18px;
+        padding: 24px 0 42px;
+    }
+
+    .details-panel {
+        order: -1;
+        gap: 14px;
+        padding: 18px;
+        border-radius: 12px;
+    }
+
+    .details-panel .button {
+        width: 100%;
+    }
+
+    .content-body {
+        padding: 20px;
+        border-radius: 12px;
+    }
+
+    .content-body h2 {
+        font-size: 27px;
+    }
+
+    .single-meta {
+        font-size: 16px;
+    }
+
+    .single-meta span::before {
+        content: "";
+    }
+
+    .single-meta span {
+        display: block;
+        margin-top: 4px;
+    }
+
+    .footer-inner {
+        gap: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container,
+    .narrow {
+        width: min(100% - 22px, 440px);
+    }
+
+    .site-logo {
+        width: min(166px, 56vw);
+    }
+
+    .header-cta {
+        padding-inline: 12px;
+    }
+
+    h1 { font-size: 31px; }
+    h2 { font-size: 25px; }
+
+    .hero-copy {
+        font-size: 16px;
+    }
+
+    .quick-links a,
+    .archive-switcher a {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .category-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .page-heading,
+    .single-hero {
+        padding: 28px 0;
+    }
+
+    .content-details-grid div {
+        grid-template-columns: 1fr;
+        gap: 3px;
+        padding: 12px 13px;
+    }
+
+    .content-body {
+        padding: 17px;
+    }
+
+    .content-body ul,
+    .content-body ol {
+        padding-left: 20px;
+    }
+
+    .deadline-badge,
+    .pill {
+        max-width: 100%;
+        white-space: normal;
+    }
 }
 
 .sample-note {
