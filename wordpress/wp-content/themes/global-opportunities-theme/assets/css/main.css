@@ -294,9 +294,9 @@ h3 { font-size: 22px; }
 .opportunity-search label {
     display: grid;
     gap: 6px;
-    color: var(--muted);
+    color: var(--blue-dark);
     font-size: 13px;
-    font-weight: 800;
+    font-weight: 900;
 }
 
 .opportunity-search label:first-of-type,
@@ -308,18 +308,20 @@ h3 { font-size: 22px; }
 .opportunity-search select {
     width: 100%;
     min-height: 48px;
-    border: 1px solid transparent;
+    border: 2px solid var(--coral);
     border-radius: 12px;
     padding: 10px 12px;
     color: var(--ink);
     background: var(--paper);
+    box-shadow: 0 2px 0 rgba(232, 93, 63, 0.12);
     font: inherit;
 }
 
 .opportunity-search input:focus,
 .opportunity-search select:focus {
-    outline: 3px solid rgba(232, 93, 63, 0.22);
-    border-color: var(--coral);
+    outline: 3px solid rgba(232, 93, 63, 0.24);
+    border-color: var(--coral-dark);
+    box-shadow: 0 0 0 1px var(--coral-dark), 0 6px 14px rgba(232, 93, 63, 0.16);
 }
 
 .opportunity-search button,
