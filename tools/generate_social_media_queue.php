@@ -123,6 +123,29 @@ function aitomic_social_schedule_times(string $times_arg): array {
     return $valid ?: ['09:00', '13:00', '17:00'];
 }
 
+function aitomic_social_interval_times(string $start_arg, string $end_arg, int $interval_minutes): array {
+    if (!preg_match('/^\d{1,2}:\d{2}$/', $start_arg) || !preg_match('/^\d{1,2}:\d{2}$/', $end_arg)) {
+        return [];
+    }
+
+    $start = DateTimeImmutable::createFromFormat('Y-m-d H:i', '2000-01-01 ' . $start_arg);
+    $end = DateTimeImmutable::createFromFormat('Y-m-d H:i', '2000-01-01 ' . $end_arg);
+    if (!$start || !$end || $end < $start) {
+        return [];
+    }
+
+    $times = [];
+    $cursor = $start;
+    $interval_minutes = max(1, min(1440, $interval_minutes));
+
+    while ($cursor <= $end) {
+        $times[] = $cursor->format('H:i');
+        $cursor = $cursor->modify('+' . $interval_minutes . ' minutes');
+    }
+
+    return $times;
+}
+
 function aitomic_social_timezone(string $timezone_arg): DateTimeZone {
     try {
         return new DateTimeZone($timezone_arg ?: 'Africa/Kampala');
@@ -145,10 +168,11 @@ function aitomic_social_next_schedule_date(DateTimeImmutable $start, int $day_of
     return $date;
 }
 
-function aitomic_social_scheduled_for(int $index, DateTimeImmutable $start, array $times, bool $skip_weekends): string {
+function aitomic_social_scheduled_for(int $index, DateTimeImmutable $start, array $times, bool $skip_weekends, int $per_slot): string {
     $slot_count = max(1, count($times));
-    $day_offset = intdiv($index, $slot_count);
-    $slot = $times[$index % $slot_count];
+    $slot_index = intdiv($index, max(1, $per_slot));
+    $day_offset = intdiv($slot_index, $slot_count);
+    $slot = $times[$slot_index % $slot_count];
     $date = aitomic_social_next_schedule_date($start, $day_offset, $skip_weekends);
 
     return $date->format('Y-m-d') . ' ' . $slot . ' ' . $date->getTimezone()->getName();
@@ -290,22 +314,35 @@ $offset = max(0, (int) aitomic_social_arg($args ?? [], 'offset', '0'));
 $mark = aitomic_social_arg($args ?? [], 'mark', 'no') === 'yes';
 $include_expired = aitomic_social_arg($args ?? [], 'include_expired', 'no') === 'yes';
 $include_thin = aitomic_social_arg($args ?? [], 'include_thin', 'no') === 'yes';
-$times = aitomic_social_schedule_times(aitomic_social_arg($args ?? [], 'times', '09:00,13:00,17:00'));
+$window_start = aitomic_social_arg($args ?? [], 'window_start', '');
+$window_end = aitomic_social_arg($args ?? [], 'window_end', '');
+$interval_minutes = max(1, min(1440, (int) aitomic_social_arg($args ?? [], 'interval_minutes', '30')));
+$times = $window_start !== '' && $window_end !== ''
+    ? aitomic_social_interval_times($window_start, $window_end, $interval_minutes)
+    : aitomic_social_schedule_times(aitomic_social_arg($args ?? [], 'times', '09:00,13:00,17:00'));
+if (!$times) {
+    $times = ['09:00', '13:00', '17:00'];
+}
+$per_slot = max(1, min(50, (int) aitomic_social_arg($args ?? [], 'per_slot', '1')));
 $skip_weekends = aitomic_social_arg($args ?? [], 'skip_weekends', 'yes') !== 'no';
+$include_queued = aitomic_social_arg($args ?? [], 'include_queued', 'no') === 'yes';
 $timezone = aitomic_social_timezone(aitomic_social_arg($args ?? [], 'timezone', 'Africa/Kampala'));
 $default_start = current_datetime()->modify('+1 day')->format('Y-m-d');
 $schedule_start_arg = aitomic_social_arg($args ?? [], 'schedule_start', $default_start);
 $schedule_start = DateTimeImmutable::createFromFormat('Y-m-d', $schedule_start_arg, $timezone) ?: new DateTimeImmutable('+1 day', $timezone);
 
-$query = new WP_Query([
+$query_args = [
     'post_type' => 'opportunity',
     'post_status' => 'publish',
-    'posts_per_page' => min(1000, max($limit * 6, $limit)),
+    'posts_per_page' => min(3000, max($limit * 8, $limit)),
     'offset' => $offset,
     'orderby' => 'date',
     'order' => 'DESC',
     'fields' => 'ids',
-    'meta_query' => [
+];
+
+if (!$include_queued) {
+    $query_args['meta_query'] = [
         'relation' => 'OR',
         [
             'key' => '_go_linkedin_queued_at',
@@ -316,8 +353,10 @@ $query = new WP_Query([
             'value' => '',
             'compare' => '=',
         ],
-    ],
-]);
+    ];
+}
+
+$query = new WP_Query($query_args);
 
 $rows = [];
 foreach ($query->posts as $post_id) {
@@ -328,7 +367,7 @@ foreach ($query->posts as $post_id) {
         continue;
     }
 
-    $scheduled_for = aitomic_social_scheduled_for(count($rows), $schedule_start, $times, $skip_weekends);
+    $scheduled_for = aitomic_social_scheduled_for(count($rows), $schedule_start, $times, $skip_weekends, $per_slot);
     if (!$include_expired && aitomic_social_will_be_expired((int) $post_id, $scheduled_for)) {
         continue;
     }
@@ -383,6 +422,11 @@ echo wp_json_encode([
     'schedule_start' => $schedule_start->format('Y-m-d'),
     'times' => $times,
     'timezone' => $timezone->getName(),
+    'per_slot' => $per_slot,
+    'window_start' => $window_start,
+    'window_end' => $window_end,
+    'interval_minutes' => $interval_minutes,
     'skip_weekends' => $skip_weekends,
     'include_thin' => $include_thin,
+    'include_queued' => $include_queued,
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";

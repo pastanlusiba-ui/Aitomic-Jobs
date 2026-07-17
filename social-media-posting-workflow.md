@@ -17,7 +17,7 @@ Every post should link to the Aitomic Jobs detail page, not directly to the sour
 Use the WP-CLI helper:
 
 ```bash
-wp eval-file /home/u710255073/aitomic-tools/generate_social_media_queue.php limit=30 schedule_start=2026-07-20 times=09:00,13:00,17:00 timezone=Africa/Kampala
+wp eval-file /home/u710255073/aitomic-tools/generate_social_media_queue.php limit=108 schedule_start=2026-07-20 window_start=07:00 window_end=20:00 interval_minutes=30 per_slot=4 timezone=Africa/Kampala
 ```
 
 Useful options:
@@ -28,8 +28,11 @@ Useful options:
 - `include_expired=yes`: include expired opportunities if needed for archive campaigns.
 - `schedule_start=YYYY-MM-DD`: first date for LinkedIn scheduling.
 - `times=09:00,13:00,17:00`: daily posting slots, in the WordPress site timezone.
+- `window_start=07:00 window_end=20:00 interval_minutes=30`: generate slots every 30 minutes across the day.
+- `per_slot=4`: schedule four opportunities at each generated slot.
 - `timezone=Africa/Kampala`: timezone used for scheduled slots.
 - `skip_weekends=yes`: default; moves scheduled posts to weekdays.
+- `include_queued=yes`: include opportunities that were already marked queued when rebuilding a schedule.
 - `include_thin=yes`: override the default quality filter. Avoid this unless manually reviewed.
 - Opportunities are skipped when their deadline would have passed before the scheduled LinkedIn slot.
 
