@@ -34,6 +34,7 @@ Useful options:
 - `skip_weekends=yes`: default; moves scheduled posts to weekdays.
 - `include_queued=yes`: include opportunities that were already marked queued when rebuilding a schedule.
 - `include_thin=yes`: override the default quality filter. Avoid this unless manually reviewed.
+- `include_posted=yes`: override the default LinkedIn safety filter. Avoid this unless intentionally reposting.
 - Opportunities are skipped when their deadline would have passed before the scheduled LinkedIn slot.
 
 The script creates:
@@ -51,6 +52,29 @@ The script creates:
 - Update `status`, `scheduled_for`, and `posted_url` after scheduling or publishing.
 - By default, the queue excludes posts that still contain old placeholder wording.
 
-## Next Automation Step
+## Automated Scheduler
 
-Once the LinkedIn page is ready, connect the CSV/JSON queue to a scheduler that supports LinkedIn pages, or use a custom LinkedIn API posting script.
+The live site uses a WordPress-native scheduler event registered by the Global Opportunities plugin:
+
+```bash
+wp cron event list --fields=hook,next_run_relative,recurrence | grep go_linkedin_scheduler_tick
+```
+
+The scheduler:
+
+- Finds queued opportunities whose `_go_linkedin_scheduled_for` time has arrived.
+- Posts up to `limit=4` opportunities per run.
+- Uses the connected WP LinkedIn Auto Publish plugin to publish to the Aitomic Jobs LinkedIn page.
+- Generates detailed LinkedIn copy from each opportunity before posting.
+- Skips expired opportunities and thin placeholder-content posts.
+- Marks successful posts with `_go_linkedin_posted_at` and `_go_linkedin_scheduler_status=posted`.
+- Uses a short lock so overlapping cron runs do not duplicate posts.
+- Runs through the WordPress hook `go_linkedin_scheduler_tick` every 5 minutes when WP-Cron is triggered.
+
+Useful checks:
+
+```bash
+wp eval-file /home/u710255073/aitomic-tools/run_linkedin_scheduler.php limit=4 dry_run=yes
+wp eval-file /home/u710255073/aitomic-tools/run_linkedin_scheduler.php limit=4 dry_run=yes now="2026-07-20 07:00 Africa/Kampala"
+wp eval 'echo wp_json_encode(go_linkedin_scheduler_run(4), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);'
+```

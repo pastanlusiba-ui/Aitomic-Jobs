@@ -1094,3 +1094,296 @@ function go_assign_imported_opportunity_terms(int $post_id, array $item): void
         }
     }
 }
+
+function go_linkedin_scheduler_intervals(array $schedules): array
+{
+    $schedules['go_every_five_minutes'] = [
+        'interval' => 5 * MINUTE_IN_SECONDS,
+        'display' => __('Every 5 minutes', 'global-opportunities'),
+    ];
+
+    return $schedules;
+}
+add_filter('cron_schedules', 'go_linkedin_scheduler_intervals');
+
+function go_linkedin_scheduler_schedule(): void
+{
+    if (!wp_next_scheduled('go_linkedin_scheduler_tick')) {
+        wp_schedule_event(time() + MINUTE_IN_SECONDS, 'go_every_five_minutes', 'go_linkedin_scheduler_tick');
+    }
+}
+add_action('init', 'go_linkedin_scheduler_schedule');
+
+function go_linkedin_scheduler_deactivate(): void
+{
+    wp_clear_scheduled_hook('go_linkedin_scheduler_tick');
+}
+register_deactivation_hook(__FILE__, 'go_linkedin_scheduler_deactivate');
+
+function go_linkedin_scheduler_meta(int $post_id, string $key): string
+{
+    return trim((string) get_post_meta($post_id, GO_META_PREFIX . $key, true));
+}
+
+function go_linkedin_scheduler_term_list(int $post_id, string $taxonomy): string
+{
+    $terms = get_the_terms($post_id, $taxonomy);
+    if (!$terms || is_wp_error($terms)) {
+        return '';
+    }
+
+    return implode(', ', wp_list_pluck($terms, 'name'));
+}
+
+function go_linkedin_scheduler_trim(string $text, int $limit): string
+{
+    $text = html_entity_decode(wp_strip_all_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $text = preg_replace("/\r\n?/", "\n", $text);
+    $text = preg_replace('/[ \t]+/', ' ', (string) $text);
+    $text = preg_replace("/\n{3,}/", "\n\n", (string) $text);
+    $text = trim((string) $text);
+
+    if (strlen($text) <= $limit) {
+        return $text;
+    }
+
+    $cut = substr($text, 0, max(0, $limit - 3));
+    $space = strrpos($cut, ' ');
+    if ($space !== false && $space > 40) {
+        $cut = substr($cut, 0, $space);
+    }
+
+    return rtrim($cut, " \t\n\r\0\x0B.,;:") . '...';
+}
+
+function go_linkedin_scheduler_is_clean(int $post_id): bool
+{
+    $content = (string) get_post_field('post_content', $post_id);
+    foreach ([
+        'This is an official',
+        'Review the official source page',
+        'Review the official opportunity page',
+        'Eligibility requirements are set',
+        'Contract terms, salary, fees',
+        'Use the application button on this page',
+    ] as $needle) {
+        if (stripos($content, $needle) !== false) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function go_linkedin_scheduler_is_expired(int $post_id): bool
+{
+    $deadline = go_linkedin_scheduler_meta($post_id, 'deadline');
+    if ($deadline === '') {
+        return false;
+    }
+
+    $timestamp = strtotime($deadline . ' 23:59:59');
+
+    return $timestamp && $timestamp < current_time('timestamp');
+}
+
+function go_linkedin_scheduler_sent_count(int $post_id): int
+{
+    $sent = get_post_meta($post_id, '_sent_to_linkedin', true);
+
+    return is_array($sent) ? count($sent) : 0;
+}
+
+function go_linkedin_scheduler_scheduled_time(string $value): ?int
+{
+    if (trim($value) === '') {
+        return null;
+    }
+
+    try {
+        $date = new DateTimeImmutable($value, new DateTimeZone('Africa/Kampala'));
+        return $date->getTimestamp();
+    } catch (Exception $e) {
+        return null;
+    }
+}
+
+function go_linkedin_scheduler_hashtags(string $type, string $category, string $country): string
+{
+    $tags = ['#AitomicJobs', '#Opportunities', '#CareerOpportunity'];
+    $type_lower = strtolower($type);
+    $category_lower = strtolower($category);
+
+    if (str_contains($type_lower, 'intern')) {
+        $tags = array_merge($tags, ['#Internship', '#Students', '#YoungProfessionals']);
+    } elseif (str_contains($type_lower, 'tender') || str_contains($type_lower, 'consult')) {
+        $tags = array_merge($tags, ['#Consultancies', '#Procurement']);
+    } elseif (str_contains($type_lower, 'remote')) {
+        $tags[] = '#RemoteJobs';
+    } elseif (str_contains($type_lower, 'volunteer')) {
+        $tags[] = '#VolunteerOpportunities';
+    } else {
+        $tags = array_merge($tags, ['#Jobs', '#Hiring']);
+    }
+
+    if (str_contains($category_lower, 'health')) {
+        $tags[] = '#GlobalHealth';
+    } elseif (str_contains($category_lower, 'education')) {
+        $tags[] = '#Education';
+    } elseif (str_contains($category_lower, 'technology') || str_contains($category_lower, 'information')) {
+        $tags[] = '#Technology';
+    } elseif (str_contains($category_lower, 'development') || str_contains($category_lower, 'humanitarian')) {
+        $tags[] = '#InternationalDevelopment';
+    }
+
+    $country_tag = preg_replace('/[^A-Za-z0-9]/', '', $country);
+    if ($country_tag !== '' && !in_array(strtolower($country), ['global/international', 'global', 'international', 'remote', 'various', 'multiple'], true)) {
+        $tags[] = '#' . $country_tag;
+    }
+
+    return implode(' ', array_slice(array_unique($tags), 0, 12));
+}
+
+function go_linkedin_scheduler_message(int $post_id): string
+{
+    $title = html_entity_decode(get_the_title($post_id), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $organization = html_entity_decode(go_linkedin_scheduler_meta($post_id, 'organization'), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $type = go_linkedin_scheduler_term_list($post_id, 'opportunity_type') ?: go_linkedin_scheduler_meta($post_id, 'employment_type');
+    $category = go_linkedin_scheduler_term_list($post_id, 'opportunity_category');
+    $country = go_linkedin_scheduler_term_list($post_id, 'country') ?: go_linkedin_scheduler_meta($post_id, 'country');
+    $work_mode = go_linkedin_scheduler_term_list($post_id, 'work_mode') ?: go_linkedin_scheduler_meta($post_id, 'work_mode');
+    $location = go_linkedin_scheduler_meta($post_id, 'city');
+    $deadline = go_linkedin_scheduler_meta($post_id, 'deadline') ?: 'Not specified';
+    $compensation = go_linkedin_scheduler_meta($post_id, 'salary');
+    $summary = go_linkedin_scheduler_trim(get_the_excerpt($post_id) ?: (string) get_post_field('post_content', $post_id), 430);
+    $url = get_permalink($post_id);
+
+    $detail_lines = array_filter([
+        $organization !== '' ? 'Organization: ' . $organization : '',
+        $type !== '' ? 'Opportunity type: ' . $type : '',
+        $category !== '' ? 'Sector: ' . $category : '',
+        trim($location . $country) !== '' ? 'Location: ' . implode(', ', array_filter([$location, $country])) : '',
+        $work_mode !== '' ? 'Work mode: ' . $work_mode : '',
+        'Deadline: ' . $deadline,
+        $compensation !== '' ? 'Compensation: ' . $compensation : '',
+    ]);
+
+    return go_linkedin_scheduler_trim(implode("\n\n", array_filter([
+        'Opportunity alert: ' . $title,
+        $summary,
+        "Key details\n" . implode("\n", $detail_lines),
+        "What to review on Aitomic Jobs\nFull description, responsibilities or submission instructions, eligibility requirements, benefits or compensation notes, and the official source link.",
+        "Full details and official application link\n" . $url,
+        go_linkedin_scheduler_hashtags($type, $category, $country),
+    ])), 2900);
+}
+
+function go_linkedin_scheduler_run(int $limit = 4): array
+{
+    if (get_transient('go_linkedin_scheduler_lock')) {
+        return ['status' => 'locked', 'published' => 0, 'results' => []];
+    }
+
+    set_transient('go_linkedin_scheduler_lock', 1, 4 * MINUTE_IN_SECONDS);
+    $published = 0;
+    $results = [];
+
+    try {
+        if (!function_exists('wp_linkedin_autopublish_post_to_linkedin_common')) {
+            return ['status' => 'missing-linkedin-plugin', 'published' => 0, 'results' => []];
+        }
+
+        $query = new WP_Query([
+            'post_type' => 'opportunity',
+            'post_status' => 'publish',
+            'posts_per_page' => 120,
+            'orderby' => 'meta_value',
+            'meta_key' => '_go_linkedin_scheduled_for',
+            'order' => 'ASC',
+            'fields' => 'ids',
+            'meta_query' => [
+                'relation' => 'AND',
+                ['key' => '_go_linkedin_queued_at', 'compare' => 'EXISTS'],
+                ['key' => '_go_linkedin_scheduled_for', 'compare' => 'EXISTS'],
+                [
+                    'relation' => 'OR',
+                    ['key' => '_go_linkedin_posted_at', 'compare' => 'NOT EXISTS'],
+                    ['key' => '_go_linkedin_posted_at', 'value' => '', 'compare' => '='],
+                ],
+            ],
+        ]);
+
+        $now = current_time('timestamp');
+        foreach ($query->posts as $post_id) {
+            $post_id = (int) $post_id;
+            $scheduled_raw = (string) get_post_meta($post_id, '_go_linkedin_scheduled_for', true);
+            $scheduled = go_linkedin_scheduler_scheduled_time($scheduled_raw);
+            if (!$scheduled || $scheduled > $now) {
+                continue;
+            }
+
+            if (go_linkedin_scheduler_sent_count($post_id) > 0) {
+                update_post_meta($post_id, '_go_linkedin_posted_at', current_time('mysql'));
+                update_post_meta($post_id, '_go_linkedin_scheduler_status', 'already-posted');
+                continue;
+            }
+
+            if (go_linkedin_scheduler_is_expired($post_id)) {
+                update_post_meta($post_id, '_go_linkedin_scheduler_status', 'skipped-expired');
+                continue;
+            }
+
+            if (!go_linkedin_scheduler_is_clean($post_id)) {
+                update_post_meta($post_id, '_go_linkedin_scheduler_status', 'skipped-thin-content');
+                continue;
+            }
+
+            update_post_meta($post_id, '_custom_linkedin_share_message', go_linkedin_scheduler_message($post_id));
+            update_post_meta($post_id, '_go_linkedin_scheduler_status', 'posting');
+            update_post_meta($post_id, '_go_linkedin_last_attempt_at', current_time('mysql'));
+
+            $before_count = go_linkedin_scheduler_sent_count($post_id);
+            $plugin_result = wp_linkedin_autopublish_post_to_linkedin_common($post_id);
+            $after_count = go_linkedin_scheduler_sent_count($post_id);
+
+            if ($after_count > $before_count) {
+                $published++;
+                update_post_meta($post_id, '_go_linkedin_posted_at', current_time('mysql'));
+                update_post_meta($post_id, '_go_linkedin_scheduler_status', 'posted');
+                delete_post_meta($post_id, '_go_linkedin_last_error');
+                $status = 'posted';
+            } else {
+                update_post_meta($post_id, '_go_linkedin_scheduler_status', 'failed');
+                update_post_meta($post_id, '_go_linkedin_last_error', (string) $plugin_result);
+                $status = 'failed';
+            }
+
+            $results[] = [
+                'post_id' => $post_id,
+                'title' => get_the_title($post_id),
+                'status' => $status,
+                'scheduled_for' => $scheduled_raw,
+            ];
+
+            if (count($results) >= $limit) {
+                break;
+            }
+        }
+    } finally {
+        delete_transient('go_linkedin_scheduler_lock');
+    }
+
+    update_option('go_linkedin_scheduler_last_run', [
+        'time' => current_time('mysql'),
+        'published' => $published,
+        'results' => $results,
+    ], false);
+
+    return ['status' => 'ok', 'published' => $published, 'results' => $results];
+}
+
+function go_linkedin_scheduler_tick(): void
+{
+    go_linkedin_scheduler_run(4);
+}
+add_action('go_linkedin_scheduler_tick', 'go_linkedin_scheduler_tick');

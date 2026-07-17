@@ -107,6 +107,16 @@ function aitomic_social_is_clean(int $post_id): bool {
     return true;
 }
 
+function aitomic_social_sent_count(int $post_id): int {
+    $sent = get_post_meta($post_id, '_sent_to_linkedin', true);
+    return is_array($sent) ? count($sent) : 0;
+}
+
+function aitomic_social_already_posted(int $post_id): bool {
+    return trim((string) get_post_meta($post_id, '_go_linkedin_posted_at', true)) !== ''
+        || aitomic_social_sent_count($post_id) > 0;
+}
+
 function aitomic_social_schedule_times(string $times_arg): array {
     $times = array_filter(array_map('trim', explode(',', $times_arg)));
     $valid = [];
@@ -314,6 +324,7 @@ $offset = max(0, (int) aitomic_social_arg($args ?? [], 'offset', '0'));
 $mark = aitomic_social_arg($args ?? [], 'mark', 'no') === 'yes';
 $include_expired = aitomic_social_arg($args ?? [], 'include_expired', 'no') === 'yes';
 $include_thin = aitomic_social_arg($args ?? [], 'include_thin', 'no') === 'yes';
+$include_posted = aitomic_social_arg($args ?? [], 'include_posted', 'no') === 'yes';
 $window_start = aitomic_social_arg($args ?? [], 'window_start', '');
 $window_end = aitomic_social_arg($args ?? [], 'window_end', '');
 $interval_minutes = max(1, min(1440, (int) aitomic_social_arg($args ?? [], 'interval_minutes', '30')));
@@ -360,6 +371,9 @@ $query = new WP_Query($query_args);
 
 $rows = [];
 foreach ($query->posts as $post_id) {
+    if (!$include_posted && aitomic_social_already_posted((int) $post_id)) {
+        continue;
+    }
     if (!$include_expired && aitomic_social_is_expired((int) $post_id)) {
         continue;
     }
@@ -428,5 +442,6 @@ echo wp_json_encode([
     'interval_minutes' => $interval_minutes,
     'skip_weekends' => $skip_weekends,
     'include_thin' => $include_thin,
+    'include_posted' => $include_posted,
     'include_queued' => $include_queued,
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
