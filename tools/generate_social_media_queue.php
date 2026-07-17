@@ -75,6 +75,85 @@ function aitomic_social_is_expired(int $post_id): bool {
     return $timestamp && $timestamp < current_time('timestamp');
 }
 
+function aitomic_social_will_be_expired(int $post_id, string $scheduled_for): bool {
+    $deadline = aitomic_social_meta($post_id, 'deadline');
+    if ($deadline === '') {
+        return false;
+    }
+
+    $deadline_timestamp = strtotime($deadline . ' 23:59:59');
+    $schedule_timestamp = strtotime($scheduled_for);
+
+    return $deadline_timestamp && $schedule_timestamp && $deadline_timestamp < $schedule_timestamp;
+}
+
+function aitomic_social_is_clean(int $post_id): bool {
+    $content = (string) get_post_field('post_content', $post_id);
+    $bad_needles = [
+        'This is an official',
+        'Review the official source page',
+        'Review the official opportunity page',
+        'Eligibility requirements are set',
+        'Contract terms, salary, fees',
+        'Use the application button on this page',
+    ];
+
+    foreach ($bad_needles as $needle) {
+        if (stripos($content, $needle) !== false) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function aitomic_social_schedule_times(string $times_arg): array {
+    $times = array_filter(array_map('trim', explode(',', $times_arg)));
+    $valid = [];
+
+    foreach ($times as $time) {
+        if (preg_match('/^\d{1,2}:\d{2}$/', $time)) {
+            [$hour, $minute] = array_map('intval', explode(':', $time));
+            if ($hour >= 0 && $hour <= 23 && $minute >= 0 && $minute <= 59) {
+                $valid[] = sprintf('%02d:%02d', $hour, $minute);
+            }
+        }
+    }
+
+    return $valid ?: ['09:00', '13:00', '17:00'];
+}
+
+function aitomic_social_timezone(string $timezone_arg): DateTimeZone {
+    try {
+        return new DateTimeZone($timezone_arg ?: 'Africa/Kampala');
+    } catch (Exception $e) {
+        return new DateTimeZone('Africa/Kampala');
+    }
+}
+
+function aitomic_social_next_schedule_date(DateTimeImmutable $start, int $day_offset, bool $skip_weekends): DateTimeImmutable {
+    $date = $start;
+    $added = 0;
+
+    while ($added < $day_offset || ($skip_weekends && in_array((int) $date->format('N'), [6, 7], true))) {
+        $date = $date->modify('+1 day');
+        if (!$skip_weekends || !in_array((int) $date->format('N'), [6, 7], true)) {
+            $added++;
+        }
+    }
+
+    return $date;
+}
+
+function aitomic_social_scheduled_for(int $index, DateTimeImmutable $start, array $times, bool $skip_weekends): string {
+    $slot_count = max(1, count($times));
+    $day_offset = intdiv($index, $slot_count);
+    $slot = $times[$index % $slot_count];
+    $date = aitomic_social_next_schedule_date($start, $day_offset, $skip_weekends);
+
+    return $date->format('Y-m-d') . ' ' . $slot . ' ' . $date->getTimezone()->getName();
+}
+
 function aitomic_social_hashtags(string $type, string $country): string {
     $tags = ['#AitomicJobs', '#Opportunities', '#CareerOpportunity'];
     $type_lower = strtolower($type);
@@ -176,7 +255,7 @@ function aitomic_social_linkedin_text(int $post_id, string $title, string $organ
     return aitomic_social_trim(implode("\n\n", array_filter($parts)), 2700);
 }
 
-function aitomic_social_record(int $post_id): array {
+function aitomic_social_record(int $post_id, string $scheduled_for): array {
     $title = html_entity_decode(get_the_title($post_id), ENT_QUOTES | ENT_HTML5, 'UTF-8');
     $organization = html_entity_decode(aitomic_social_meta($post_id, 'organization'), ENT_QUOTES | ENT_HTML5, 'UTF-8');
     $type = aitomic_social_term_list($post_id, 'opportunity_type') ?: aitomic_social_meta($post_id, 'employment_type');
@@ -199,10 +278,10 @@ function aitomic_social_record(int $post_id): array {
         'url' => $url,
         'source_url' => $source_url,
         'linkedin_text' => $linkedin,
-        'status' => 'Ready',
-        'scheduled_for' => '',
+        'status' => 'Scheduled',
+        'scheduled_for' => $scheduled_for,
         'posted_url' => '',
-        'notes' => '',
+        'notes' => 'Review copy and opportunity status before posting.',
     ];
 }
 
@@ -210,11 +289,18 @@ $limit = max(1, min(300, (int) aitomic_social_arg($args ?? [], 'limit', '50')));
 $offset = max(0, (int) aitomic_social_arg($args ?? [], 'offset', '0'));
 $mark = aitomic_social_arg($args ?? [], 'mark', 'no') === 'yes';
 $include_expired = aitomic_social_arg($args ?? [], 'include_expired', 'no') === 'yes';
+$include_thin = aitomic_social_arg($args ?? [], 'include_thin', 'no') === 'yes';
+$times = aitomic_social_schedule_times(aitomic_social_arg($args ?? [], 'times', '09:00,13:00,17:00'));
+$skip_weekends = aitomic_social_arg($args ?? [], 'skip_weekends', 'yes') !== 'no';
+$timezone = aitomic_social_timezone(aitomic_social_arg($args ?? [], 'timezone', 'Africa/Kampala'));
+$default_start = current_datetime()->modify('+1 day')->format('Y-m-d');
+$schedule_start_arg = aitomic_social_arg($args ?? [], 'schedule_start', $default_start);
+$schedule_start = DateTimeImmutable::createFromFormat('Y-m-d', $schedule_start_arg, $timezone) ?: new DateTimeImmutable('+1 day', $timezone);
 
 $query = new WP_Query([
     'post_type' => 'opportunity',
     'post_status' => 'publish',
-    'posts_per_page' => $limit,
+    'posts_per_page' => min(1000, max($limit * 6, $limit)),
     'offset' => $offset,
     'orderby' => 'date',
     'order' => 'DESC',
@@ -238,9 +324,21 @@ foreach ($query->posts as $post_id) {
     if (!$include_expired && aitomic_social_is_expired((int) $post_id)) {
         continue;
     }
-    $rows[] = aitomic_social_record((int) $post_id);
+    if (!$include_thin && !aitomic_social_is_clean((int) $post_id)) {
+        continue;
+    }
+
+    $scheduled_for = aitomic_social_scheduled_for(count($rows), $schedule_start, $times, $skip_weekends);
+    if (!$include_expired && aitomic_social_will_be_expired((int) $post_id, $scheduled_for)) {
+        continue;
+    }
+    $rows[] = aitomic_social_record((int) $post_id, $scheduled_for);
     if ($mark) {
         update_post_meta((int) $post_id, '_go_linkedin_queued_at', current_time('mysql'));
+        update_post_meta((int) $post_id, '_go_linkedin_scheduled_for', $scheduled_for);
+    }
+    if (count($rows) >= $limit) {
+        break;
     }
 }
 
@@ -282,4 +380,9 @@ echo wp_json_encode([
     'csv' => str_replace(ABSPATH, home_url('/'), $csv_file),
     'json' => str_replace(ABSPATH, home_url('/'), $json_file),
     'marked_as_linkedin_queued' => $mark,
+    'schedule_start' => $schedule_start->format('Y-m-d'),
+    'times' => $times,
+    'timezone' => $timezone->getName(),
+    'skip_weekends' => $skip_weekends,
+    'include_thin' => $include_thin,
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
