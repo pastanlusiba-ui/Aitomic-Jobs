@@ -20,7 +20,7 @@ function gotheme_enqueue_assets(): void
         'gotheme-main',
         get_template_directory_uri() . '/assets/css/main.css',
         [],
-        '0.1.3'
+        '0.1.4'
     );
 }
 add_action('wp_enqueue_scripts', 'gotheme_enqueue_assets');

@@ -296,7 +296,7 @@ h3 { font-size: 22px; }
     gap: 6px;
     color: var(--blue-dark);
     font-size: 13px;
-    font-weight: 900;
+    font-weight: 850;
 }
 
 .opportunity-search label:first-of-type,
@@ -308,20 +308,20 @@ h3 { font-size: 22px; }
 .opportunity-search select {
     width: 100%;
     min-height: 48px;
-    border: 2px solid var(--coral);
+    border: 1px solid rgba(232, 93, 63, 0.58);
     border-radius: 12px;
     padding: 10px 12px;
     color: var(--ink);
     background: var(--paper);
-    box-shadow: 0 2px 0 rgba(232, 93, 63, 0.12);
+    box-shadow: 0 1px 0 rgba(232, 93, 63, 0.08);
     font: inherit;
 }
 
 .opportunity-search input:focus,
 .opportunity-search select:focus {
-    outline: 3px solid rgba(232, 93, 63, 0.24);
-    border-color: var(--coral-dark);
-    box-shadow: 0 0 0 1px var(--coral-dark), 0 6px 14px rgba(232, 93, 63, 0.16);
+    outline: 3px solid rgba(232, 93, 63, 0.16);
+    border-color: var(--coral);
+    box-shadow: 0 3px 10px rgba(232, 93, 63, 0.1);
 }
 
 .opportunity-search button,
