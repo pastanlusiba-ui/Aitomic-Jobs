@@ -802,7 +802,7 @@ function go_filter_opportunity_archive(WP_Query $query): void
     }
 
     $query->set('meta_query', go_deadline_archive_meta_query($is_expired_archive));
-    $query->set('posts_per_page', 12);
+    $query->set('posts_per_page', 18);
 
     if ($is_expired_archive) {
         $query->set('orderby', 'meta_value');

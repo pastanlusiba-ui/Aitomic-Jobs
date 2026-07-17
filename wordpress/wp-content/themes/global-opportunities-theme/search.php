@@ -22,13 +22,10 @@
                 <?php endif; ?>
             <?php endwhile; ?>
         </div>
-        <div class="pagination">
-            <?php the_posts_pagination(); ?>
-        </div>
+        <?php gotheme_render_pagination(); ?>
     <?php else : ?>
         <p>No matching opportunities found.</p>
     <?php endif; ?>
 </section>
 
 <?php get_footer(); ?>
-

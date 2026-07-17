@@ -20,7 +20,7 @@ function gotheme_enqueue_assets(): void
         'gotheme-main',
         get_template_directory_uri() . '/assets/css/main.css',
         [],
-        '0.1.1'
+        '0.1.2'
     );
 }
 add_action('wp_enqueue_scripts', 'gotheme_enqueue_assets');
@@ -96,6 +96,44 @@ function gotheme_is_expired_opportunity(?int $post_id = null): bool
     $timestamp = gotheme_deadline_timestamp(gotheme_deadline_value($post_id));
 
     return $timestamp !== null && $timestamp < current_time('timestamp');
+}
+
+function gotheme_render_pagination(): void
+{
+    global $wp_query;
+
+    $total_pages = (int) $wp_query->max_num_pages;
+    if ($total_pages <= 1) {
+        return;
+    }
+
+    $current_page = max(1, (int) get_query_var('paged'));
+    if ($current_page === 1) {
+        $current_page = max(1, (int) get_query_var('page'));
+    }
+
+    $links = paginate_links([
+        'current' => $current_page,
+        'total' => $total_pages,
+        'type' => 'array',
+        'prev_text' => __('Previous', 'global-opportunities-theme'),
+        'next_text' => __('Next', 'global-opportunities-theme'),
+        'mid_size' => 2,
+        'end_size' => 1,
+    ]);
+
+    if (!$links) {
+        return;
+    }
+
+    echo '<nav class="pagination" aria-label="' . esc_attr__('Opportunity pages', 'global-opportunities-theme') . '">';
+    echo '<p class="pagination-status">' . esc_html(sprintf(__('Page %1$d of %2$d', 'global-opportunities-theme'), $current_page, $total_pages)) . '</p>';
+    echo '<div class="pagination-links">';
+    foreach ($links as $link) {
+        echo wp_kses_post($link);
+    }
+    echo '</div>';
+    echo '</nav>';
 }
 
 function gotheme_site_icon(): void

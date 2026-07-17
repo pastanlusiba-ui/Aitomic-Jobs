@@ -25,13 +25,10 @@
                 <?php get_template_part('template-parts/opportunity-card'); ?>
             <?php endwhile; ?>
         </div>
-        <div class="pagination">
-            <?php the_posts_pagination(); ?>
-        </div>
+        <?php gotheme_render_pagination(); ?>
     <?php else : ?>
         <p><?php echo $showing_expired ? 'No expired opportunities found.' : 'No matching opportunities found.'; ?></p>
     <?php endif; ?>
 </section>
 
 <?php get_footer(); ?>
-
