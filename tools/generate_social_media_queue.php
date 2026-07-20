@@ -282,7 +282,7 @@ function aitomic_social_linkedin_text(int $post_id, string $title, string $organ
         $parts[] = "Who should consider this\n" . $eligibility;
     }
 
-    $parts[] = "What to review on Aitomic Jobs\nFull description, responsibilities or submission instructions, eligibility requirements, benefits or compensation notes, and the official source link.";
+    $parts[] = "What to review on Aitomic Jobs\nFull description, responsibilities or submission instructions, eligibility requirements, benefits or compensation notes, and application guidance.";
     $parts[] = "Full details and official application link\n" . $url;
     $parts[] = $tags;
 

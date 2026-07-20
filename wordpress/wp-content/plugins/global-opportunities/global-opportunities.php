@@ -1574,7 +1574,7 @@ function go_linkedin_scheduler_message(int $post_id): string
         'Opportunity alert: ' . $title,
         $summary,
         "Key details\n" . implode("\n", $detail_lines),
-        "What to review on Aitomic Jobs\nFull description, responsibilities or submission instructions, eligibility requirements, benefits or compensation notes, and the official source link.",
+        "What to review on Aitomic Jobs\nFull description, responsibilities or submission instructions, eligibility requirements, benefits or compensation notes, and application guidance.",
         "Full details and official application link\n" . $url,
         go_linkedin_scheduler_hashtags($type, $category, $country),
     ])), 2900);
