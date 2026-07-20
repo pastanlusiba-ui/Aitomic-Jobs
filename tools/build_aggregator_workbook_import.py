@@ -213,6 +213,25 @@ def source_domain(url: str) -> str:
     return host[4:] if host.startswith("www.") else host
 
 
+def type_phrase(opp_type: str) -> str:
+    low = opp_type.lower()
+    if "intern" in low:
+        return "an internship opportunity"
+    if "volunteer" in low:
+        return "a volunteer opportunity"
+    if "consult" in low or "tender" in low:
+        return "a tender or consultancy opportunity"
+    if "remote" in low:
+        return "a remote work opportunity"
+    if "training" in low:
+        return "a training or short course opportunity"
+    if "call" in low:
+        return "a call for applications"
+    if "job" in low:
+        return "a job opportunity"
+    return "an opportunity"
+
+
 def build_content_fields(row: dict[str, str]) -> dict[str, object]:
     title = row["Opportunity Title"]
     org = row["Organisation"]
@@ -231,36 +250,36 @@ def build_content_fields(row: dict[str, str]) -> dict[str, object]:
     evidence = row["Publication Evidence"]
 
     summary = (
-        f"{org} is listed through {aggregator} for {title}. "
-        f"The indexed record is categorized as {category or opp_type}"
-        f"{' in ' + field if field else ''}, with coverage/location shown as {location or row['Country / Coverage'] or country}."
+        f"{title} is {type_phrase(opp_type)} with {org}"
+        f"{' in ' + field if field else ''}. "
+        f"The opportunity is connected to {location or row['Country / Coverage'] or country} and is suitable for candidates interested in {sector.lower()}."
     )
     description = (
-        f"This opportunity was supplied in the aggregator-only workbook for the 17-20 July 2026 search window. "
-        f"Aitomic Jobs has structured the index information into a standard listing so users can discover it by type, country, field and work mode. "
-        f"The aggregator evidence states: {evidence or 'publication evidence not specified in the workbook'}. "
-        f"Because this record comes from an index/profile site, applicants should open the source link and verify the full vacancy notice, application instructions, deadline, eligibility and official employer details before applying."
+        f"{org} is offering {title} for people interested in {sector.lower()}, categorized under {category or opp_type}"
+        f"{' with a focus on ' + field if field else ''}. "
+        f"The role or opportunity is associated with {location or row['Country / Coverage'] or country}, with a {mode.lower()} work arrangement. "
+        f"Interested applicants should review the opportunity requirements, prepare the requested materials, and complete the application process before the stated deadline."
     )
 
     responsibilities = [
-        f"Review the indexed {opp_type.lower()} listing for {title} and confirm the full role or submission scope.",
-        "Check the employer or source organization instructions linked from the aggregator page.",
-        "Prepare the documents, profile, proposal, CV or application materials requested by the source listing.",
+        f"Review the role, assignment, tender, or programme scope for {title}.",
+        "Check the application requirements, submission steps, and supporting document instructions.",
+        "Prepare the documents, profile, proposal, CV, or application materials required for the opportunity.",
     ]
     if field:
         responsibilities.insert(1, f"Assess whether the field or functional area, {field}, matches your experience and interests.")
 
     requirements = [
-        "Eligibility requirements should be confirmed from the linked aggregator/source page before applying.",
-        f"Applicants should verify country, work arrangement and deadline details because the workbook deadline is recorded as {deadline_label}.",
-        "Use the official application channel indicated by the source listing rather than sending documents to Aitomic Jobs.",
+        "Applicants should meet the education, experience, location, documentation, and eligibility requirements for the opportunity.",
+        f"Applicants should check the country, work arrangement, and deadline details before applying. The current deadline/status is {deadline_label}.",
+        "Applications should be submitted through the stated application channel.",
     ]
     if category_to_type(category, title) == "Tenders / Consultancies":
-        requirements.append("Consultants and bidders should check Terms of Reference, submission format, evaluation criteria and procurement requirements on the source listing.")
+        requirements.append("Consultants and bidders should review the Terms of Reference, submission format, evaluation criteria, and procurement requirements.")
 
     benefits = [
-        "The workbook does not provide full compensation details for this listing.",
-        "Salary, stipend, consultancy fee, contract terms or volunteer conditions should be confirmed from the source listing.",
+        "Compensation details are not specified for this opportunity.",
+        "Salary, stipend, consultancy fee, contract terms, or volunteer conditions should be reviewed before applying.",
     ]
 
     return {
@@ -271,8 +290,8 @@ def build_content_fields(row: dict[str, str]) -> dict[str, object]:
         "country": country,
         "location": location or row["Country / Coverage"] or country,
         "work_mode": mode,
-        "compensation": "Not specified in supplied workbook",
-        "duration": "Not specified in supplied workbook",
+        "compensation": "Not specified",
+        "duration": "Not specified",
         "start_date": "",
         "deadline": deadline,
         "deadline_label": deadline_label,
@@ -281,9 +300,9 @@ def build_content_fields(row: dict[str, str]) -> dict[str, object]:
         "responsibilities": responsibilities,
         "requirements": requirements,
         "benefits": benefits,
-        "how_to_apply": f"Open the {aggregator} source link and follow the application instructions on the indexed listing or linked employer page.",
-        "verification_notes": f"Imported from {SOURCE_XLSX.name}. Publication evidence: {evidence or 'not specified'}. Aggregator-only source; verify final details before applying.",
-        "source": aggregator,
+        "how_to_apply": "Use the Apply now button and follow the stated application instructions.",
+        "verification_notes": "",
+        "source": row["Aggregator"],
         "source_url": url,
         "application_link": url,
         "aggregator": aggregator,

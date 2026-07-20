@@ -1273,20 +1273,19 @@ function go_build_imported_opportunity_content(array $item): string
     $type = esc_html($item['opportunity_type'] ?? '');
     $compensation = esc_html($item['compensation'] ?: 'Not specified');
     $posted = esc_html($item['posted_date'] ?? '');
-    $source = esc_html($item['source'] ?? '');
     $type_lower = strtolower((string) ($item['opportunity_type'] ?? ''));
     $category_label = esc_html($item['category'] ?? 'the stated field');
 
     if (str_contains($type_lower, 'volunteer')) {
         $responsibilities = [
-            'Support the programme activities, events, outreach, fieldwork, education, research, or community-facing work described by the source.',
+            'Support the programme activities, events, outreach, fieldwork, education, research, or community-facing work connected to the opportunity.',
             'Participate reliably in the stated volunteer schedule, training, onboarding, and team coordination requirements.',
             'Work professionally with staff, participants, communities, students, visitors, or partners connected to the opportunity.',
         ];
         $requirements = [
-            'Meet the age, availability, location, onboarding, and participation requirements stated by the source organization.',
+            'Meet the age, availability, location, onboarding, and participation requirements for the opportunity.',
             'Have interest or experience relevant to ' . $category_label . ', community service, education, research, or public engagement.',
-            'Complete the application and any screening, interview, training, or background-check steps required by the source.',
+            'Complete the application and any screening, interview, training, or background-check steps required for participation.',
         ];
     } elseif (str_contains($type_lower, 'intern') || str_contains($type_lower, 'training')) {
         $responsibilities = [
@@ -1295,30 +1294,30 @@ function go_build_imported_opportunity_content(array $item): string
             'Prepare assigned notes, analysis, datasets, briefs, presentations, reports, or other deliverables requested by the host team.',
         ];
         $requirements = [
-            'Meet the student, graduate, early-career, or participant eligibility rules stated by the source organization.',
+            'Meet the student, graduate, early-career, or participant eligibility rules for the opportunity.',
             'Have interest, coursework, training, or experience relevant to ' . $category_label . '.',
-            'Submit the required application materials before the stated deadline and follow the source application process.',
+            'Submit the required application materials before the stated deadline and follow the application process.',
         ];
     } elseif (str_contains($type_lower, 'consult') || str_contains($type_lower, 'tender')) {
         $responsibilities = [
-            'Prepare a responsive technical, financial, consultancy, or procurement submission based on the source documents.',
+            'Prepare a responsive technical, financial, consultancy, or procurement submission based on the tender or assignment documents.',
             'Deliver the services, goods, research, analysis, advisory work, or outputs requested by the contracting organization.',
             'Coordinate with the client team on timelines, reporting, quality assurance, and final deliverables.',
         ];
         $requirements = [
             'Demonstrate relevant professional, technical, institutional, or supplier experience for the assignment.',
-            'Provide the registration, technical, financial, eligibility, and supporting documents requested by the source.',
+            'Provide the registration, technical, financial, eligibility, and supporting documents requested for the opportunity.',
             'Meet the deadline, submission format, and procurement or consultancy rules stated by the contracting organization.',
         ];
     } else {
         $responsibilities = [
-            'Deliver the technical, programme, research, administrative, operational, or stakeholder-facing work described by the source.',
+            'Deliver the technical, programme, research, administrative, operational, or stakeholder-facing work connected to the role.',
             'Coordinate with internal teams, partners, clients, communities, or stakeholders to complete assigned outputs.',
             'Prepare documentation, analysis, reports, tools, systems, communications, or services required by the role.',
         ];
         $requirements = [
             'Have relevant education, skills, training, or professional experience related to ' . $category_label . '.',
-            'Meet the qualifications, location, work authorization, documentation, and deadline requirements stated by the source.',
+            'Meet the qualifications, location, work authorization, documentation, and deadline requirements for the opportunity.',
             'Communicate clearly and work professionally with multidisciplinary teams or stakeholders.',
         ];
     }
@@ -1327,7 +1326,7 @@ function go_build_imported_opportunity_content(array $item): string
     $requirements_html = '<ul><li>' . implode('</li><li>', array_map('esc_html', $requirements)) . '</li></ul>';
     $benefits = strtolower((string) $compensation) !== 'not specified'
         ? '<ul><li>' . $compensation . '</li></ul>'
-        : '<p>Compensation, benefits, fees, allowances, or volunteer arrangements are as stated by the source organization.</p>';
+        : '<p>Compensation, benefits, fees, allowances, or volunteer arrangements are not specified.</p>';
 
     return '<h2>Short Summary</h2>'
         . '<p>' . esc_html(wp_trim_words($summary, 42)) . '</p>'
@@ -1347,8 +1346,7 @@ function go_build_imported_opportunity_content(array $item): string
         . '<h2>Responsibilities</h2>' . $responsibilities_html
         . '<h2>Requirements / Eligibility</h2>' . $requirements_html
         . '<h2>Benefits / Compensation</h2>' . $benefits
-        . '<h2>How To Apply</h2><p>Use the Apply now button to open the source page and follow the application process provided by the source organization.</p>'
-        . '<h2>Source</h2><p>Source: ' . $source . '.</p>';
+        . '<h2>How To Apply</h2><p>Use the Apply now button and follow the stated application process.</p>';
 }
 
 function go_update_imported_opportunity_meta(int $post_id, array $item): void

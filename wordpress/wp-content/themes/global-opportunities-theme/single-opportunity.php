@@ -35,10 +35,6 @@
                 <?php if ($application_link) : ?>
                     <a class="button primary" href="<?php echo esc_url($application_link); ?>" target="_blank" rel="noopener">Apply now</a>
                 <?php endif; ?>
-                <?php $source_link = gotheme_meta('source_link'); ?>
-                <?php if ($source_link) : ?>
-                    <a class="button secondary" href="<?php echo esc_url($source_link); ?>" target="_blank" rel="noopener">View source</a>
-                <?php endif; ?>
             </aside>
         </div>
     </article>

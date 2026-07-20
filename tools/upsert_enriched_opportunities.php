@@ -12,7 +12,12 @@ if (!is_array($items)) {
 }
 
 function aitomic_upsert_value(array $item, string $key, string $fallback = ''): string {
-    return trim((string) ($item[$key] ?? $fallback));
+    $value = trim((string) ($item[$key] ?? $fallback));
+    $replacements = [
+        'Not specified in supplied workbook' => 'Not specified',
+        'Check listing' => 'Check application page',
+    ];
+    return $replacements[$value] ?? $value;
 }
 
 function aitomic_upsert_list(array $item, string $key): array {
@@ -61,8 +66,7 @@ function aitomic_upsert_content(array $item): string {
     $responsibilities = aitomic_upsert_list($item, 'responsibilities');
     $requirements = aitomic_upsert_list($item, 'requirements');
     $benefits = aitomic_upsert_list($item, 'benefits');
-    $how_to_apply = aitomic_upsert_value($item, 'how_to_apply', 'Use the Apply now button to open the official opportunity page and follow the stated application instructions.');
-    $verification = aitomic_upsert_value($item, 'verification_notes');
+    $how_to_apply = aitomic_upsert_value($item, 'how_to_apply', 'Use the Apply now button and follow the stated application instructions.');
 
     $details = [
         'Position / opportunity' => $title,
@@ -99,10 +103,6 @@ function aitomic_upsert_content(array $item): string {
         $html .= '<h2>Benefits / Compensation</h2>' . aitomic_upsert_list_html($benefits);
     }
     $html .= '<h2>How To Apply</h2><p>' . esc_html($how_to_apply) . '</p>';
-    if ($verification !== '') {
-        $html .= '<h2>Verification Notes</h2><p>' . esc_html($verification) . '</p>';
-    }
-    $html .= '<h2>Source</h2><p>Source: <a href="' . $source_url . '">' . $source . '</a>.</p>';
     return $html;
 }
 
