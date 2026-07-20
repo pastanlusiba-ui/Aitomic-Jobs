@@ -522,6 +522,99 @@ h3 { font-size: 22px; }
     overflow-wrap: anywhere;
 }
 
+.legal-page {
+    display: grid;
+    gap: 18px;
+}
+
+.legal-page h2 {
+    margin-top: 12px;
+    font-size: 26px;
+}
+
+.legal-page h3 {
+    margin-top: 8px;
+    font-size: 20px;
+}
+
+.legal-page p,
+.legal-page li {
+    color: #344054;
+}
+
+.legal-page ul,
+.legal-page ol {
+    margin-top: 0;
+}
+
+.contact-form {
+    display: grid;
+    gap: 14px;
+    margin-top: 8px;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fffaf5;
+}
+
+.contact-form label {
+    display: grid;
+    gap: 6px;
+    color: var(--blue-dark);
+    font-size: 13px;
+    font-weight: 850;
+}
+
+.contact-form input,
+.contact-form textarea {
+    width: 100%;
+    min-height: 46px;
+    border: 1px solid rgba(232, 93, 63, 0.42);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--ink);
+    background: var(--paper);
+    font: inherit;
+}
+
+.contact-form textarea {
+    min-height: 150px;
+    resize: vertical;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+    outline: 3px solid rgba(232, 93, 63, 0.14);
+    border-color: var(--coral);
+}
+
+.contact-form .button {
+    width: fit-content;
+    min-width: 160px;
+}
+
+.form-notice {
+    margin: 0;
+    border-radius: 8px;
+    padding: 11px 13px;
+    font-weight: 800;
+}
+
+.form-notice.success {
+    background: #ecfdf3;
+    color: #05603a;
+}
+
+.form-notice.error {
+    background: #fff0ea;
+    color: var(--coral-dark);
+}
+
+.hp-field {
+    position: absolute;
+    left: -9999px;
+}
+
 .details-panel {
     position: sticky;
     top: 88px;
@@ -548,6 +641,25 @@ h3 { font-size: 22px; }
 }
 
 .site-footer p { margin: 0; color: #dbe2ff; }
+
+.footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px 14px;
+}
+
+.footer-links a {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.footer-links a:hover,
+.footer-links a:focus {
+    color: #ffd8cf;
+}
 
 @media (max-width: 980px) {
     .hero-grid,
@@ -799,6 +911,10 @@ h3 { font-size: 22px; }
     .footer-inner {
         gap: 12px;
     }
+
+    .footer-links {
+        justify-content: flex-start;
+    }
 }
 
 @media (max-width: 480px) {
@@ -850,6 +966,14 @@ h3 { font-size: 22px; }
     .content-body ul,
     .content-body ol {
         padding-left: 20px;
+    }
+
+    .contact-form {
+        padding: 16px;
+    }
+
+    .contact-form .button {
+        width: 100%;
     }
 
     .deadline-badge,
