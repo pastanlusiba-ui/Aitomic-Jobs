@@ -1,6 +1,6 @@
 <?php
 /**
- * Create or update the core Aitomic Jobs trust and AdSense-readiness pages.
+ * Create or update the core Aitomic Jobs website information pages.
  *
  * Usage:
  * wp eval-file /home/u710255073/aitomic-tools/upsert_adsense_pages.php
@@ -36,7 +36,7 @@ HTML
         'title' => 'Contact Aitomic Jobs',
         'menu_order' => 20,
         'content' => <<<'HTML'
-<p>Use this page to contact Aitomic Jobs about corrections, source attribution, listing updates, partnerships, advertising, privacy requests, or general website enquiries.</p>
+<p>Use this page to contact Aitomic Jobs about corrections, source attribution, listing updates, partnerships, privacy requests, or general website enquiries.</p>
 
 <h2>Before You Contact Us</h2>
 <p>If your message is about a specific opportunity, please include the opportunity title and the page URL. If your message is about an application, tender, internship, or call, contact the source organization directly as Aitomic Jobs does not manage applications on behalf of listed organizations.</p>
@@ -59,24 +59,22 @@ HTML
 <h2>How We Use Information</h2>
 <p>We use information to operate and improve the website, respond to enquiries, maintain security, analyze site performance, understand which pages are useful, detect spam or abuse, and improve opportunity listings and user experience.</p>
 
-<h2>Cookies, Analytics, and Advertising</h2>
-<p>Aitomic Jobs may use cookies, web beacons, IP addresses, local storage, and similar technologies for site functionality, analytics, measurement, security, and advertising. Cookies help websites remember preferences, measure traffic, and support advertising services.</p>
+<h2>Cookies and Analytics</h2>
+<p>Aitomic Jobs may use cookies, web beacons, IP addresses, local storage, and similar technologies for site functionality, analytics, measurement, security, and website improvement. Cookies help websites remember preferences, understand traffic, and keep services reliable.</p>
 
-<p>We may use Google services, including Google Analytics, Google AdSense, Google Ad Manager, Google Ads, or related advertising and measurement products. When these services are used, Google and its partners may collect or receive information from this website and use that information to provide, personalize, measure, and improve ads and services.</p>
+<h2>Advertising and Third-Party Services</h2>
+<p>The website may work with third-party services for hosting, analytics, security, advertising, or performance measurement. These services may collect or receive technical information from this website, such as device data, browser information, IP address, page views, cookies, or similar identifiers, and may use that information according to their own policies and user settings.</p>
 
-<p>Google explains how it uses information from sites and apps that use Google services here: <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">How Google uses information from sites or apps that use our services</a>.</p>
+<p>If advertising is enabled on Aitomic Jobs, advertising partners may use cookies or similar technologies to deliver, measure, limit, and improve ads. Where required, visitors may be given choices about cookie consent or ad personalization.</p>
 
-<h2>Third-Party Advertising Cookies</h2>
-<p>Third parties, including Google, may place and read cookies on users' browsers or use web beacons, IP addresses, and other identifiers as a result of ad serving on this website. These technologies may be used for ad delivery, frequency capping, fraud prevention, reporting, and ad personalization where permitted by law and user settings.</p>
-
-<h2>Managing Cookies and Ads Personalization</h2>
-<p>Visitors can manage cookies through their browser settings. Visitors can also manage Google ads personalization through Google's ad settings and related privacy tools. Disabling some cookies may affect how parts of the website function.</p>
+<h2>Managing Cookies</h2>
+<p>Visitors can manage cookies through browser settings and, where available, website consent tools. Disabling some cookies may affect how parts of the website function.</p>
 
 <h2>External Links</h2>
 <p>Aitomic Jobs links to source websites where opportunities are originally published. We are not responsible for the privacy practices, content, application forms, or security of third-party websites. Visitors should review the privacy policy of any external site before submitting personal information.</p>
 
 <h2>Data Sharing</h2>
-<p>We do not sell contact form messages. We may share information with trusted service providers that help operate the website, analytics tools, advertising platforms, security services, hosting providers, and authorities where required by law.</p>
+<p>We do not sell contact form messages. We may share information with trusted service providers that help operate the website, analytics tools, security services, hosting providers, communication tools, and authorities where required by law.</p>
 
 <h2>Data Retention</h2>
 <p>We keep information only for as long as reasonably necessary for the purposes described in this policy, including responding to enquiries, maintaining records, preventing abuse, and complying with legal obligations.</p>
@@ -101,24 +99,24 @@ HTML
 <p>This Cookie Policy explains how Aitomic Jobs may use cookies and similar technologies.</p>
 
 <h2>What Cookies Are</h2>
-<p>Cookies are small text files stored on a browser or device. They can help a website function, remember preferences, measure visits, improve security, and support advertising.</p>
+<p>Cookies are small text files stored on a browser or device. They can help a website function, remember preferences, measure visits, improve security, and support useful website services.</p>
 
 <h2>Types of Cookies We May Use</h2>
 <ul>
 <li><strong>Essential cookies:</strong> support basic website operation, security, and form protection.</li>
 <li><strong>Analytics cookies:</strong> help us understand traffic, popular pages, and website performance.</li>
-<li><strong>Advertising cookies:</strong> may be used by advertising partners such as Google to deliver, measure, and improve ads.</li>
+<li><strong>Advertising cookies:</strong> may be used by advertising partners to deliver, measure, and improve ads if advertising is active on the website.</li>
 <li><strong>Preference cookies:</strong> may remember user choices where applicable.</li>
 </ul>
 
-<h2>Google Advertising Cookies</h2>
-<p>If Google ads are enabled, Google may use cookies or similar identifiers to serve ads, limit repeated ads, measure ad performance, detect fraud, and personalize ads where allowed. Google provides more information about AdSense cookies here: <a href="https://support.google.com/adsense/answer/7549925" target="_blank" rel="noopener">How AdSense uses cookies</a>.</p>
+<h2>Third-Party Cookies</h2>
+<p>Some services used by the website may set their own cookies or similar identifiers for analytics, security, embedded content, or advertising. These third parties are responsible for their own cookie and privacy practices.</p>
 
 <h2>Managing Cookies</h2>
 <p>Most browsers allow visitors to block, delete, or control cookies through browser settings. Some website features may not work correctly if cookies are disabled.</p>
 
 <h2>Updates</h2>
-<p>We may update this Cookie Policy as the website, advertising setup, or legal requirements change.</p>
+<p>We may update this Cookie Policy as the website, service providers, or legal requirements change.</p>
 HTML
     ],
     [
@@ -174,8 +172,8 @@ HTML
 <h2>Disclaimer</h2>
 <p>Aitomic Jobs is an information directory. We do not guarantee selection, employment, award of contract, admission, training placement, visa approval, or any other outcome. We are not responsible for decisions made by employers, procuring entities, training providers, or source organizations.</p>
 
-<h2>Advertising and Affiliate Disclosure</h2>
-<p>Aitomic Jobs may display advertising or sponsored placements. Advertising helps support website operations. Sponsored or advertising content should not influence whether an opportunity is genuine, useful, or suitable for a visitor.</p>
+<h2>Commercial Disclosure</h2>
+<p>Aitomic Jobs may display advertising, sponsored placements, or partner notices in clearly identifiable areas of the website. Commercial content should not influence whether an opportunity is genuine, useful, or suitable for a visitor.</p>
 
 <h2>Source Attribution</h2>
 <p>Where possible, listings include source names and links so visitors can verify information directly. If you represent an organization and want a listing corrected or removed, please contact us.</p>
