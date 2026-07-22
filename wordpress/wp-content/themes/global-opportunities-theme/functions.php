@@ -53,6 +53,48 @@ function gotheme_opportunity_meta_list(): string
     return go_render_opportunity_meta_list(get_the_ID());
 }
 
+function gotheme_is_exact_opportunity_link(string $url): bool
+{
+    $url = trim($url);
+    if ($url === '') {
+        return false;
+    }
+
+    $parts = wp_parse_url($url);
+    if (!$parts || empty($parts['scheme']) || empty($parts['host'])) {
+        return false;
+    }
+
+    $path = trim((string) ($parts['path'] ?? ''), '/');
+    if ($path === '') {
+        return false;
+    }
+
+    if (preg_match('/^(jobs?|careers?|vacanc(?:y|ies)|opportunities?|employment|recruitment|join-us|work-with-us|search|apply|procurement|tenders?|listings?)$/i', $path)) {
+        return false;
+    }
+
+    $has_exact_query_id = !empty($parts['query']) && preg_match('/(job|jobs|career|requisition|req|opening|position|vacancy|id|counter|jncounter|posting|post)=?[^&]*\d{3,}/i', $parts['query']);
+
+    if (preg_match('/(jobsearchresults|jobssearchresults|searchresults)/i', $path) && !$has_exact_query_id) {
+        return false;
+    }
+
+    if (preg_match('/(^|[\/_.-])(search|results?|jobsearch|jobssearch|job-search|jobs-search)($|[\/_.-])/i', $path) && !preg_match('/\b\d{4,}\b/', $path) && !$has_exact_query_id) {
+        return false;
+    }
+
+    if (preg_match('/(job|jobs|careers?|career|vacanc|vacancies|position|posting|postings|opportun|apply|requisition|req|opening|details|vacatures|empleos|consult|tender|rfp|procurement|listings?\/.+|\d{4,})/i', $path)) {
+        return true;
+    }
+
+    if ($has_exact_query_id) {
+        return true;
+    }
+
+    return false;
+}
+
 function gotheme_deadline_value(?int $post_id = null): string
 {
     $post_id = $post_id ?: get_the_ID();

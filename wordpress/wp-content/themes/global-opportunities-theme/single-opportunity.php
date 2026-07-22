@@ -32,7 +32,7 @@
                     <p class="closed-note">This opportunity is archived because its application deadline has passed.</p>
                 <?php endif; ?>
                 <?php $application_link = gotheme_meta('application_link'); ?>
-                <?php if ($application_link) : ?>
+                <?php if ($application_link && gotheme_is_exact_opportunity_link($application_link)) : ?>
                     <a class="button primary" href="<?php echo esc_url($application_link); ?>" target="_blank" rel="noopener">Apply now</a>
                 <?php endif; ?>
             </aside>
